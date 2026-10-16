@@ -18,10 +18,16 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 # ملاحظة: احتفظي بمفتاحك السري الخاص هنا، ولا تستخدمي هذا النص
-app.config['SECRET_KEY'] = '82b7d994008977b5db62f4f66239861ab92227a7e3c9211c07b7f4fb404c4c18'
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-    'mysql+pymysql://root:@localhost/druginteractiondb?charset=utf8mb4'
-)
+app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
+
+_db_url = os.environ['DATABASE_URL']
+_db_url = _db_url.replace('mysql://', 'mysql+pymysql://', 1).split('?')[0]
+app.config['SQLALCHEMY_DATABASE_URI'] = _db_url
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 280,
+    'connect_args': {'ssl': {'fake_flag_to_enable_tls': True}},
+}
 db = SQLAlchemy(app)
 
 
@@ -1540,6 +1546,8 @@ def reset_password():
 
     return render_template('auth/reset.html', username=user.username)
 
+with app.app_context():
+    db.create_all()
 
 if __name__ == '__main__':
     app.run(debug=True)
