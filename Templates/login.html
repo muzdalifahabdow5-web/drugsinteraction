@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>تسجيل الدخول | الصيدلاني الخبير</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap">
+  <script>
+    try { 
+      var t = localStorage.getItem('theme'); 
+      if (!t) {
+        t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', t); 
+    } catch (e) {}
+  </script>
+  <style>
+    :root {
+      --font: 'Readex Pro', 'Segoe UI', Tahoma, 'Noto Sans Arabic', system-ui, sans-serif;
+      --maxw: 440px;
+      --ease: cubic-bezier(.2, .7, .2, 1);
+
+      /* الوضع الفاتح */
+      --bg: #F2F7FC;
+      --bg-tint: #E3EEFA;
+      --surface: #FFFFFF;
+      --surface-2: #F6F9FD;
+      --border: #D9E4F0;
+      --border-strong: #B8C9DD;
+
+      --text: #10243B;
+      --text-soft: #4B6179;
+      --text-faint: #6B7F95;
+
+      --primary: #2563C9;
+      --primary-hover: #1C50AA;
+      --primary-soft: #E4EEFC;
+      --on-primary: #FFFFFF;
+      --accent: #4A8FE0;
+
+      --focus: #1F6FEB;
+      --shadow: 0 1px 2px rgba(16, 36, 59, .05), 0 8px 24px -8px rgba(37, 99, 201, .14);
+      --shadow-lg: 0 2px 4px rgba(16, 36, 59, .05), 0 18px 40px -12px rgba(37, 99, 201, .22);
+
+      --major-bg: #FDECEC;    --major-fg: #A11A1A;    --major-bd: #F0B3B3;    --major-solid: #D32F2F;
+    }
+
+    [data-theme="dark"] {
+      --bg: #09131F;
+      --bg-tint: #0E1D30;
+      --surface: #101F33;
+      --surface-2: #14263D;
+      --border: #213650;
+      --border-strong: #35506F;
+
+      --text: #E8F0FA;
+      --text-soft: #AFC0D4;
+      --text-faint: #8296AD;
+
+      --primary: #5B9CF0;
+      --primary-hover: #7DB2F6;
+      --primary-soft: #14304F;
+      --on-primary: #06121F;
+      --accent: #6AA8F5;
+
+      --focus: #8DBCFA;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -8px rgba(0, 0, 0, .55);
+      --shadow-lg: 0 2px 4px rgba(0, 0, 0, .4), 0 18px 40px -12px rgba(0, 0, 0, .65);
+
+      --major-bg: #3A1419;    --major-fg: #FFB7B7;    --major-bd: #7A2A33;    --major-solid: #FF6B6B;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    body {
+      margin: 0; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+      font-family: var(--font); font-size: 1rem; line-height: 1.8;
+      color: var(--text); background: radial-gradient(900px 420px at 85% -80px, var(--bg-tint), transparent 70%), var(--bg);
+      background-attachment: fixed; -webkit-font-smoothing: antialiased;
+      transition: background-color .3s var(--ease), color .3s var(--ease);
+    }
+    a { color: var(--primary); text-underline-offset: 3px; text-decoration: none; }
+    a:hover { color: var(--primary-hover); }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 8px; }
+
+    .topbar { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(12px); }
+    .brand { display: inline-flex; align-items: center; gap: .65rem; font-weight: 700; font-size: 1.125rem; color: var(--text); text-decoration: none; }
+    .brand svg { width: 38px; height: 38px; flex: none; }
+
+    .icon-btn { cursor: pointer; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); display: grid; place-items: center; transition: all .15s var(--ease); }
+    .icon-btn:hover { border-color: var(--primary); background: var(--primary-soft); }
+    .icon-btn svg { width: 20px; height: 20px; }
+    .icon-moon { display: block; } .icon-sun { display: none; }
+    [data-theme="dark"] .icon-moon { display: none; }
+    [data-theme="dark"] .icon-sun { display: block; }
+
+    main { flex: 1; display: grid; place-items: center; padding: 2rem 1rem; }
+    .card { inline-size: 100%; max-inline-size: var(--maxw); background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: 2rem; box-shadow: var(--shadow); animation: rise .45s var(--ease) both; }
+    h1 { font-size: 1.6rem; line-height: 1.3; margin: 0 0 .5rem; font-weight: 700; color: var(--primary); }
+    .sub { color: var(--text-soft); margin: 0 0 1.5rem; font-size: .9rem; }
+    .error { background: var(--major-bg); color: var(--major-fg); border: 1.5px solid var(--major-bd); border-radius: 10px; padding: .75rem 1rem; margin-bottom: 1.25rem; font-weight: 500; font-size: .9rem; }
+    
+    .field { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1.25rem; }
+    label { font-weight: 500; font-size: .9rem; }
+    
+    input[type="text"], input[type="email"], input[type="password"] {
+      font: inherit; color: var(--text); background: var(--surface-2); inline-size: 100%;
+      border: 1.5px solid var(--border); border-radius: 12px; min-block-size: 48px; padding: 0 1rem;
+      transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background-color .2s;
+    }
+    input::placeholder { color: var(--text-faint); }
+    input:hover { border-color: var(--border-strong); }
+    input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent); background: var(--surface); }
+    
+    .pw { position: relative; }
+    .pw input { padding-inline-start: 52px; }
+    .pw .icon-btn { position: absolute; inset-inline-end: 4px; top: 4px; width: 40px; height: 40px; border: 0; background: transparent; }
+    .eye-off { display: none; }
+    .pw.show .eye { display: none; } .pw.show .eye-off { display: block; }
+    
+    button.primary {
+      font: inherit; font-weight: 600; font-size: 1rem; color: var(--on-primary); background: var(--primary);
+      border: 0; border-radius: 999px; min-block-size: 52px; inline-size: 100%; cursor: pointer; margin-top: .5rem;
+      display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+      transition: background-color .15s var(--ease), transform .15s var(--ease);
+    }
+    button.primary:hover { background: var(--primary-hover); }
+    button.primary:active { transform: scale(.98); }
+    button.primary.loading { cursor: progress; opacity: .85; }
+    
+    .spin { display: none; inline-size: 18px; block-size: 18px; border: 2.5px solid currentColor; border-inline-end-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+    .loading .spin { display: inline-block; }
+    
+    .links { margin-top: 1.5rem; display: grid; gap: .5rem; text-align: center; font-size: .9rem; }
+    .links p { margin: 0; color: var(--text-soft); }
+    .links a { font-weight: 600; }
+    .links .back { margin-top: .5rem; }
+    .links .back a { color: var(--text-faint); font-weight: 500; }
+
+    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <g transform="translate(32 32)">
+          <g transform="rotate(45)">
+            <path d="M0 -11H-19A11 11 0 0 0 -19 11H0Z" fill="#fff" stroke="#9DB6D4" stroke-width="1.5"/>
+            <path d="M0 -11H19A11 11 0 0 1 19 11H0Z" fill="#4A8FE0"/>
+          </g>
+          <g transform="rotate(-45)">
+            <path d="M0 -11H-19A11 11 0 0 0 -19 11H0Z" fill="#4A8FE0"/>
+            <path d="M0 -11H19A11 11 0 0 1 19 11H0Z" fill="#fff" stroke="#9DB6D4" stroke-width="1.5"/>
+          </g>
+        </g>
+      </svg>
+      تداخل الأدوية
+    </a>
+    <button class="icon-btn" id="theme-toggle" type="button" aria-label="تبديل الوضع الليلي" aria-pressed="false">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+  </header>
+
+  <main id="main">
+    <section class="card" aria-labelledby="t">
+      <h1 id="t">تسجيل الدخول</h1>
+      <p class="sub">ادخل إلى حسابك لحفظ فحوصاتك والرجوع إليها.</p>
+
+      {% with messages = get_flashed_messages() %}
+        {% for m in messages %}<p class="error" role="alert">{{ m }}</p>{% endfor %}
+      {% endwith %}
+
+      <form method="POST" id="auth-form">
+        <div class="field">
+          <label for="email">البريد الإلكتروني</label>
+          <input type="email" id="email" name="email" placeholder="name@example.com" dir="auto" autocomplete="email" required autofocus>
+        </div>
+        <div class="field">
+          <label for="password">كلمة المرور</label>
+          <div class="pw">
+            <input type="password" id="password" name="password" placeholder="كلمة المرور" autocomplete="current-password" required>
+            <button class="icon-btn" type="button" aria-label="إظهار كلمة المرور" aria-pressed="false">
+              <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A9.7 9.7 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4M6.4 6.4A16 16 0 0 0 2 12s3.5 7 10 7c1.7 0 3.2-.4 4.6-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="primary" id="submit-btn" data-label="دخول" data-loading="جارٍ الدخول…">
+          <span class="spin" aria-hidden="true"></span><span id="submit-label">دخول</span>
+        </button>
+      </form>
+
+      <div class="links">
+        <p>ليس لديك حساب؟ <a href="{{ url_for('register') }}">إنشاء حساب جديد</a></p>
+        <p><a href="{{ url_for('forgot_password') }}">نسيت كلمة المرور؟</a></p>
+        <p class="back"><a href="{{ url_for('index') }}">← العودة إلى فحص التداخل</a></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var tbtn = document.getElementById('theme-toggle');
+      function isDark() {
+        var t = root.getAttribute('data-theme');
+        return t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+      function sync() { tbtn.setAttribute('aria-pressed', isDark()); }
+      tbtn.addEventListener('click', function () {
+        var next = isDark() ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch (e) {}
+        sync();
+      });
+      sync();
+
+      // إظهار/إخفاء كلمة المرور
+      var pw = document.querySelector('.pw');
+      if (pw) {
+        var input = pw.querySelector('input'), b = pw.querySelector('.icon-btn');
+        b.addEventListener('click', function () {
+          var show = input.type === 'password';
+          input.type = show ? 'text' : 'password';
+          pw.classList.toggle('show', show);
+          b.setAttribute('aria-pressed', show);
+          b.setAttribute('aria-label', show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور');
+        });
+      }
+
+      // حالة التحميل ومنع الإرسال المزدوج
+      var form = document.getElementById('auth-form'), btn = document.getElementById('submit-btn'), busy = false;
+      form.addEventListener('submit', function (e) {
+        if (busy) { e.preventDefault(); return; }
+        if (!form.checkValidity()) return;
+        busy = true; btn.classList.add('loading'); btn.setAttribute('aria-busy', 'true');
+        document.getElementById('submit-label').textContent = btn.dataset.loading;
+      });
+      window.addEventListener('pageshow', function () {
+        busy = false; btn.classList.remove('loading'); btn.removeAttribute('aria-busy');
+        document.getElementById('submit-label').textContent = btn.dataset.label;
+      });
+    })();
+  </script>
+</body>
+</html>
