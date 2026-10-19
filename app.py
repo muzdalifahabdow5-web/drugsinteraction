@@ -1,10 +1,13 @@
 import hashlib
 import hmac
+import json
 import os
 import random
 import secrets
 import smtplib
 import ssl
+import urllib.error
+import urllib.request
 import zlib
 from datetime import datetime, timedelta
 from email.message import EmailMessage
@@ -1376,6 +1379,9 @@ MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
 MAIL_PORT = int(os.environ.get('MAIL_PORT', '465'))
 MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
 MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
+# إرسال البريد عبر Brevo (HTTPS): هو الذي يعمل على Render المجاني
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
+MAIL_FROM = os.environ.get('MAIL_FROM', MAIL_USERNAME)
 
 
 def hash_reset_code(user_id, code):
@@ -1390,20 +1396,45 @@ def mask_email(email):
 
 
 def send_reset_email(to_email, code):
-    """يرسل الرمز بالبريد. وبلا إعدادات بريد يطبعه في الطرفية. يعيد True عند النجاح."""
+    """يرسل الرمز بالبريد. يعيد True عند النجاح."""
+    subject = 'رمز التحقق - نظام صيدلاني خبير'
+    body = (f'رمز التحقق الخاص بك: {code}\n\n'
+            f'الرمز صالح لمدة {RESET_CODE_MINUTES} دقائق ويُستخدم مرة واحدة.\n'
+            'إن لم تطلب هذا الرمز فتجاهل هذه الرسالة.')
+
+    # 1) عبر Brevo (HTTPS): يعمل على Render المجاني
+    if BREVO_API_KEY and MAIL_FROM:
+        payload = json.dumps({
+            'sender': {'name': 'نظام صيدلاني خبير', 'email': MAIL_FROM},
+            'to': [{'email': to_email}],
+            'subject': subject,
+            'textContent': body,
+        }).encode('utf-8')
+        req = urllib.request.Request(
+            'https://api.brevo.com/v3/smtp/email', data=payload, method='POST',
+            headers={'api-key': BREVO_API_KEY,
+                     'content-type': 'application/json',
+                     'accept': 'application/json'})
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                return 200 <= resp.status < 300
+        except urllib.error.HTTPError as exc:
+            print('[خطأ Brevo]', exc.code, exc.read().decode('utf-8', 'ignore'))
+            return False
+        except Exception as exc:
+            print('[خطأ في إرسال البريد]', exc)
+            return False
+
+    # 2) عبر SMTP: للتجربة على جهازك أو استضافة مدفوعة
     if not MAIL_USERNAME or not MAIL_PASSWORD:
         print(f'[وضع التجربة] رمز التحقق للبريد {to_email}: {code}')
         return True
     try:
         msg = EmailMessage()
-        msg['Subject'] = 'رمز التحقق - نظام صيدلاني خبير'
+        msg['Subject'] = subject
         msg['From'] = MAIL_USERNAME
         msg['To'] = to_email
-        msg.set_content(
-            f'رمز التحقق الخاص بك: {code}\n\n'
-            f'الرمز صالح لمدة {RESET_CODE_MINUTES} دقائق ويُستخدم مرة واحدة.\n'
-            'إن لم تطلب هذا الرمز فتجاهل هذه الرسالة.',
-            charset='utf-8')
+        msg.set_content(body, charset='utf-8')
         with smtplib.SMTP_SSL(MAIL_SERVER, MAIL_PORT,
                               context=ssl.create_default_context(), timeout=15) as server:
             server.login(MAIL_USERNAME, MAIL_PASSWORD)
