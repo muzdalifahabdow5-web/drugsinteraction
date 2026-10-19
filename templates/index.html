@@ -184,8 +184,13 @@
   }
   .hint { font-size: var(--fs-xs); color: var(--text-faint); margin-top: .4rem; }
 
+  /* العمر: رقم + وحدة (يوم / شهر / سنة) */
+  .age-row { display: flex; gap: .5rem; }
+  .age-row .input { flex: 1 1 0; min-width: 0; }
+  .age-row select { flex: 0 0 auto; width: auto; min-width: 96px; }
+
   .inputs-row {
-    display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 1rem; align-items: flex-end; margin-top: 1.25rem;
+    display: grid; grid-template-columns: 1.7fr 1.5fr 1fr; gap: 1rem; align-items: flex-end; margin-top: 1.25rem;
   }
 
   .input, select {
@@ -300,6 +305,14 @@
   .verdict-box.minor    .verdict-icon::before { content: "i"; }
   .verdict-box.safe .verdict-icon::before, .verdict-box.none .verdict-icon::before { content: "✓"; }
 
+  /* مستويات المحرك في التطبيق: danger / caution / safe */
+  .verdict-box.danger  { background: var(--major-bg);    border-color: var(--major-bd);    color: var(--major-fg); }
+  .verdict-box.caution { background: var(--moderate-bg); border-color: var(--moderate-bd); color: var(--moderate-fg); }
+  .verdict-box.danger  .verdict-icon { background: var(--major-solid); border-radius: 14px; }
+  .verdict-box.caution .verdict-icon { background: var(--moderate-solid); }
+  .verdict-box.danger  .verdict-icon::before,
+  .verdict-box.caution .verdict-icon::before { content: "!"; }
+
   .verdict { font-size: var(--fs-xl); font-weight: 700; color: inherit; }
   .verdict-box p { margin-top: .35rem; color: var(--text); }
 
@@ -320,6 +333,19 @@
   .finding.major    .badge { background: var(--major-bg);    color: var(--major-fg);    border-color: var(--major-bd); }
   .finding.moderate .badge { background: var(--moderate-bg); color: var(--moderate-fg); border-color: var(--moderate-bd); }
   .finding.safe     .badge { background: var(--safe-bg);     color: var(--safe-fg);     border-color: var(--safe-bd); }
+
+  /* بطاقات النتيجة الإضافية: الفئة العمرية والجرعات */
+  .card-title { font-size: var(--fs-sm); color: var(--text-soft); margin-bottom: .6rem; font-weight: 500; }
+  .pill { display: inline-block; background: var(--primary-soft); padding: .25rem .85rem; border-radius: var(--r-pill); font-size: var(--fs-sm); }
+  .dosing-list li { padding: .7rem 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); color: var(--text-soft); }
+  .dosing-list li:first-child { border-top: 0; padding-top: 0; }
+  .dosing-list strong { color: var(--text); font-weight: 600; }
+  .dosing-form { color: var(--text-faint); font-size: var(--fs-xs); }
+  .alert-warn {
+    padding: .9rem 1.1rem; border-radius: var(--r-md); font-size: var(--fs-sm);
+    background: var(--moderate-bg); color: var(--moderate-fg); border: 1.5px solid var(--moderate-bd);
+  }
+  .save-note { font-size: var(--fs-sm); color: var(--text-soft); text-align: center; }
 
   /* بطاقات التعريف المسبق بأنواع التداخلات */
   .definitions-grid {
@@ -490,12 +516,16 @@
         <div class="inputs-row">
           <div class="field" style="margin-top:0;">
             <label for="age">العمر</label>
-            <select name="age" id="age">
-              <option value="">غير محدد</option>
-              {% for a in range(1, 101) %}
-                <option value="{{ a }}" {% if form.age == a %}selected{% endif %}>{{ a }}</option>
-              {% endfor %}
-            </select>
+            <div class="age-row">
+              <input class="input" type="number" name="age" id="age" min="0" max="43830"
+                     inputmode="numeric" placeholder="غير محدد"
+                     value="{{ form.age if form.age is not none else '' }}">
+              <select name="age_unit" id="age_unit" aria-label="وحدة العمر">
+                {% for key, label in (AGE_UNITS if AGE_UNITS is defined else {'day': 'يوم', 'month': 'شهر', 'year': 'سنة'}).items() %}
+                  <option value="{{ key }}" {% if (form.age_unit or 'year') == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
           </div>
 
           <!-- قائمة منسدلة أنيقة للأمراض المصاحبة تتطاير فوق المحتوى دون تخريب التنسيق -->
@@ -568,9 +598,17 @@
           <div class="card" style="margin-top: 1rem;">
             <h3 style="font-size:var(--fs-sm); color:var(--text-soft); margin-bottom:.6rem;">الأدوية المفحوصة</h3>
             <div style="display:flex; flex-wrap:wrap; gap:.5rem;">
-              {% for m in result.meds %}<span style="background:var(--primary-soft); padding:.25rem .85rem; border-radius:var(--r-pill); font-size:var(--fs-sm);">{{ m }}</span>{% endfor %}
+              {% for m in result.meds %}<span class="pill">{{ m }}</span>{% endfor %}
             </div>
+            {% if result.age_group %}
+              <h3 class="card-title" style="margin-top:1rem;">الفئة العمرية</h3>
+              <span class="pill">{{ result.age_group }}</span>
+            {% endif %}
           </div>
+
+          {% if result.not_found %}
+            <p class="alert-warn" role="status">غير متوفر حاليًا في بيانات الأدوية لدينا: {{ result.not_found|join('، ') }}</p>
+          {% endif %}
 
           {% for f in result.findings %}
             <article class="finding {{ f.severity }}">
@@ -581,6 +619,27 @@
               <p style="margin-top:.5rem; color:var(--text-soft);">{{ f.text }}</p>
             </article>
           {% endfor %}
+
+          {% if result.dosing %}
+            <div class="card">
+              <h3 class="card-title">الجرعات المسجلة لفئة «{{ result.age_group }}»</h3>
+              <ul class="dosing-list">
+                {% for d in result.dosing %}
+                  <li>
+                    <strong>{{ d.medication }}</strong>
+                    <span class="dosing-form">({{ d.form }}{% if d.is_default_form %} — النوع الأساسي{% endif %})</span>:
+                    {{ d.text }}{% if d.notes %} — {{ d.notes }}{% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          {% if result.saved %}
+            <p class="save-note">حُفظ هذا الفحص في سجلك.</p>
+          {% elif not session.get('user_id') %}
+            <p class="save-note"><a href="{{ url_for('login') }}">سجّل الدخول</a> لحفظ فحوصاتك والرجوع إليها.</p>
+          {% endif %}
         </section>
       {% endif %}
 
@@ -789,6 +848,22 @@
         add(input.value);
       });
       render();
+    })();
+  </script>
+
+  <script>
+    /* الحد الأعلى للعمر يتبع الوحدة المختارة (120 سنة = 1440 شهراً = 43830 يوماً) */
+    (function () {
+      var ageIn = document.getElementById('age'), unitSel = document.getElementById('age_unit');
+      if (!ageIn || !unitSel) return;
+      var MAX = { day: 43830, month: 1440, year: 120 };
+      function apply() {
+        var m = MAX[unitSel.value] || 120;
+        ageIn.max = m;
+        ageIn.title = 'من 0 إلى ' + m;
+      }
+      unitSel.addEventListener('change', apply);
+      apply();
     })();
   </script>
 </body>
