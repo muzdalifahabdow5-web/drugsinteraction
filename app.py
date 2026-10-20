@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import math
 import os
 import random
 import secrets
@@ -60,7 +61,7 @@ class Medication(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     scientific_name = db.Column(db.String(150), nullable=False)
     trade_name = db.Column(db.String(150), nullable=False)
-    dosage_form = db.Column(db.String(100))
+    dosage_form_id = db.Column(db.Integer)
     concentration = db.Column(db.String(100))
     dosage = db.Column(db.String(100))
     warning = db.Column(db.Text)
@@ -90,8 +91,9 @@ class DrugContraindication(db.Model):
     medication_id = db.Column(db.Integer, nullable=False)
     condition_id = db.Column(db.Integer)
     pregnancy_risk = db.Column(db.Boolean, nullable=False, default=False)
-    age_from = db.Column(db.Integer)
-    age_to = db.Column(db.Integer)
+    age_group_id = db.Column(db.Integer)
+    min_age_days = db.Column(db.Integer)
+    max_age_days = db.Column(db.Integer)
     severity = db.Column(db.Enum('minor', 'moderate', 'major'), nullable=False)
     description = db.Column(db.Text, nullable=False)
 
@@ -100,10 +102,13 @@ class Patient(db.Model):
     __tablename__ = 'patients'
     patient_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150))
-    age = db.Column(db.Integer, nullable=False)
     is_pregnant = db.Column(db.Boolean, default=False)
     gender = db.Column(db.String(20))
     user_id = db.Column(db.Integer)
+    age_value = db.Column(db.Integer, nullable=False)
+    age_unit = db.Column(db.Enum('day', 'month', 'year'), nullable=False, default='year')
+    age_days = db.Column(db.Integer)
+    age_group_id = db.Column(db.Integer)
 
 
 class InteractionCheck(db.Model):
@@ -112,6 +117,8 @@ class InteractionCheck(db.Model):
     check_date = db.Column(db.DateTime, nullable=False)
     user_id = db.Column(db.Integer)
     patient_id = db.Column(db.Integer)
+    age_days = db.Column(db.Integer)
+    age_group_id = db.Column(db.Integer)
 
 
 class CheckMedicine(db.Model):
@@ -130,8 +137,11 @@ class InteractionCondition(db.Model):
 class UserHealthProfile(db.Model):
     __tablename__ = 'user_health_profiles'
     user_id = db.Column(db.Integer, primary_key=True)
-    age = db.Column(db.Integer)
-    is_pregnant = db.Column(db.Boolean, default=False)
+    is_pregnant = db.Column(db.Boolean, nullable=False, default=False)
+    age_value = db.Column(db.Integer)
+    age_unit = db.Column(db.Enum('day', 'month', 'year'), nullable=False, default='year')
+    age_days = db.Column(db.Integer)
+    age_group_id = db.Column(db.Integer)
 
 
 class UserChronicCondition(db.Model):
@@ -181,6 +191,92 @@ class PasswordReset(db.Model):
     used = db.Column(db.Boolean, nullable=False, default=False)
 
 
+class AgeGroup(db.Model):
+    __tablename__ = 'age_groups'
+    id = db.Column(db.Integer, primary_key=True)
+    name_arabic = db.Column(db.String(100), nullable=False)
+    name_english = db.Column(db.String(100), nullable=False)
+    min_days = db.Column(db.Integer, nullable=False)
+    max_days = db.Column(db.Integer)
+    sort_order = db.Column(db.Integer, default=0)
+    description = db.Column(db.String(255))
+
+
+class DosageForm(db.Model):
+    __tablename__ = 'dosage_forms'
+    id = db.Column(db.Integer, primary_key=True)
+    name_arabic = db.Column(db.String(100), nullable=False)
+    name_english = db.Column(db.String(100), nullable=False)
+
+
+class InteractionAgeGroup(db.Model):
+    __tablename__ = 'interaction_age_groups'
+    interaction_id = db.Column(db.Integer, primary_key=True)
+    age_group_id = db.Column(db.Integer, primary_key=True)
+    severity = db.Column(db.Enum('minor', 'moderate', 'major'))
+    notes = db.Column(db.Text)
+
+
+# ============================================================
+# دوال العمر: كل عمر يُحوَّل إلى أيام ثم تُحدَّد الفئة العمرية
+# ============================================================
+
+AGE_UNITS = {'day': 'يوم', 'month': 'شهر', 'year': 'سنة'}
+AGE_LIMITS = {'day': 36500, 'month': 1440, 'year': 120}
+
+
+def age_to_days(value, unit):
+    factor = {'day': 1, 'month': 30.4375, 'year': 365.25}[unit]
+    return math.ceil(value * factor)
+
+
+def parse_age(raw, unit):
+    """يعيد (القيمة، الوحدة، الأيام، رسالة_خطأ). الحقل الفارغ ليس خطأ."""
+    unit = unit if unit in AGE_UNITS else 'year'
+    raw = (raw or '').strip()
+    if not raw:
+        return None, unit, None, None
+    if not (raw.isascii() and raw.isdigit()) or int(raw) > AGE_LIMITS[unit]:
+        return None, unit, None, 'العمر غير صالح'
+    value = int(raw)
+    return value, unit, age_to_days(value, unit), None
+
+
+def age_group_for(days):
+    if days is None:
+        return None
+    return (AgeGroup.query
+            .filter(AgeGroup.min_days <= days,
+                    db.or_(AgeGroup.max_days.is_(None), AgeGroup.max_days >= days))
+            .order_by(AgeGroup.sort_order).first())
+
+
+def days_text(d):
+    if d < 30:
+        return f'{d} يوم'
+    if d < 365:
+        return f'{round(d / 30.4375)} شهر'
+    return f'{round(d / 365.25)} سنة'
+
+
+def split_days(d):
+    """للعرض في نماذج التعديل: أيام ← (قيمة، وحدة)."""
+    if d is None:
+        return '', 'year'
+    if d >= 365:
+        return round(d / 365.25), 'year'
+    if d >= 30:
+        return round(d / 30.4375), 'month'
+    return d, 'day'
+
+
+def age_text(value, unit):
+    return f'{value} {AGE_UNITS.get(unit, "")}' if value is not None else ''
+
+
+app.jinja_env.globals.update(split_days=split_days, age_text=age_text)
+
+
 # ============================================================
 # الحارس: يحمي المسارات حسب الدور
 # ============================================================
@@ -225,27 +321,31 @@ def med_label(med):
     return f'{med["scientific_name"]} ({med["trade_name"]})'
 
 
-def evaluate(meds, interactions, contras, age, pregnant, cond_names):
+def evaluate(meds, interactions, contras, age_days, pregnant, cond_names, overrides=None):
     """
     القلب المنطقي للمحرك. لا يتصل بقاعدة البيانات، فيسهل اختباره.
     meds: {id: {'scientific_name':..., 'trade_name':...}}
     interactions: قائمة قواميس (drug_1_id, drug_2_id, severity, description)
     contras: قائمة قواميس (medication_id, condition_id, pregnancy_risk,
-             age_from, age_to, severity, description)
+             min_days, max_days, age_group_id, severity, description)
     cond_names: {condition_id: اسم المرض} للأمراض التي اختارها المستخدم فقط
     """
     findings = []
+    overrides = overrides or {}
 
     # 1) التداخلات بين الأدوية
     for it in interactions:
         a, b = meds.get(it['drug_1_id']), meds.get(it['drug_2_id'])
         if not a or not b:
             continue
+        ov = overrides.get(it.get('id'))
+        severity = (ov and ov['severity']) or it['severity']
+        text = it['description'] + (f' ({ov["notes"]})' if ov and ov['notes'] else '')
         findings.append({
             'kind': 'interaction',
-            'severity': it['severity'],
+            'severity': severity,
             'title': f'{med_label(a)} + {med_label(b)}',
-            'text': it['description'],
+            'text': text,
         })
 
     # 2) موانع الاستعمال: مرض، أو حمل، أو عمر داخل نطاق (من... إلى...)
@@ -258,15 +358,18 @@ def evaluate(meds, interactions, contras, age, pregnant, cond_names):
             reasons.append(cond_names[c['condition_id']])
         if c['pregnancy_risk'] and pregnant:
             reasons.append('الحمل')
-        lo, hi = c.get('age_from'), c.get('age_to')
-        if age is not None and (lo is not None or hi is not None):
-            if (lo is None or age >= lo) and (hi is None or age <= hi):
-                if lo is not None and hi is not None:
-                    reasons.append(f'العمر بين {lo} و{hi} سنة')
-                elif lo is not None:
-                    reasons.append(f'العمر {lo} سنة فأكثر')
-                else:
-                    reasons.append(f'العمر {hi} سنة فأقل')
+        lo, hi = c.get('min_days'), c.get('max_days')
+        if age_days is not None:
+            if lo is not None or hi is not None:
+                if (lo is None or age_days >= lo) and (hi is None or age_days <= hi):
+                    if lo is not None and hi is not None:
+                        reasons.append(f'العمر بين {days_text(lo)} و{days_text(hi)}')
+                    elif lo is not None:
+                        reasons.append(f'العمر {days_text(lo)} فأكثر')
+                    else:
+                        reasons.append(f'العمر {days_text(hi)} فأقل')
+            elif c.get('age_group_id') is not None and c['age_group_id'] == c.get('current_group_id'):
+                reasons.append(f'الفئة العمرية: {c.get("group_name")}')
         if reasons:
             findings.append({
                 'kind': 'contra',
@@ -290,22 +393,32 @@ def evaluate(meds, interactions, contras, age, pregnant, cond_names):
     }
 
 
-def analyze(meds, age, pregnant, cond_ids):
+def analyze(meds, age_days, pregnant, cond_ids):
     """يحلل أدوية معروفة (قاموس id → بيانات) مقابل قاعدة المعرفة."""
     ids = list(meds)
-    interactions, contras = [], []
+    group = age_group_for(age_days)
+    group_names = {g.id: g.name_arabic for g in AgeGroup.query.all()}
+    interactions, contras, overrides = [], [], {}
     if ids:
+        rows = DrugInteraction.query.filter(
+            DrugInteraction.drug_1_id.in_(ids),
+            DrugInteraction.drug_2_id.in_(ids)).all()
         interactions = [
-            {'drug_1_id': i.drug_1_id, 'drug_2_id': i.drug_2_id,
+            {'id': i.interaction_id, 'drug_1_id': i.drug_1_id, 'drug_2_id': i.drug_2_id,
              'severity': i.severity, 'description': i.description}
-            for i in DrugInteraction.query.filter(
-                DrugInteraction.drug_1_id.in_(ids),
-                DrugInteraction.drug_2_id.in_(ids)).all()
+            for i in rows
         ]
+        if group and rows:
+            for r in InteractionAgeGroup.query.filter(
+                    InteractionAgeGroup.interaction_id.in_([i.interaction_id for i in rows]),
+                    InteractionAgeGroup.age_group_id == group.id).all():
+                overrides[r.interaction_id] = {'severity': r.severity, 'notes': r.notes}
         contras = [
             {'medication_id': c.medication_id, 'condition_id': c.condition_id,
              'pregnancy_risk': bool(c.pregnancy_risk),
-             'age_from': c.age_from, 'age_to': c.age_to,
+             'min_days': c.min_age_days, 'max_days': c.max_age_days,
+             'age_group_id': c.age_group_id, 'group_name': group_names.get(c.age_group_id),
+             'current_group_id': group.id if group else None,
              'severity': c.severity, 'description': c.description}
             for c in DrugContraindication.query.filter(
                 DrugContraindication.medication_id.in_(ids)).all()
@@ -316,16 +429,17 @@ def analyze(meds, age, pregnant, cond_ids):
         cond_names = {c.id: c.condition_name for c in
                       HealthCondition.query.filter(HealthCondition.id.in_(cond_ids)).all()}
 
-    result = evaluate(meds, interactions, contras, age, pregnant, cond_names)
+    result = evaluate(meds, interactions, contras, age_days, pregnant, cond_names, overrides)
     result['meds'] = [med_label(m) for m in meds.values()]
     result['dosages'] = [{'name': med_label(m), 'dosage': m['dosage']}
                          for m in meds.values() if m.get('dosage')]
     result['med_ids'] = ids
+    result['age_group'] = group.name_arabic if group else None
     result['saved'] = False
     return result
 
 
-def run_check(names, age, pregnant, cond_ids):
+def run_check(names, age_days, pregnant, cond_ids):
     """يقرأ قاعدة المعرفة ثم يستدعي evaluate."""
     meds, not_found = {}, []
     for name in names:
@@ -343,23 +457,27 @@ def run_check(names, age, pregnant, cond_ids):
         else:
             not_found.append(name.strip())
 
-    result = analyze(meds, age, pregnant, cond_ids)
+    result = analyze(meds, age_days, pregnant, cond_ids)
     result['not_found'] = not_found
     return result
 
 
-def save_check(user_id, med_ids, age, pregnant, cond_ids, patient_name=None, gender=None):
+def save_check(user_id, med_ids, age_value, age_unit, age_days, pregnant, cond_ids,
+               patient_name=None, gender=None):
     """يحفظ الفحص في سجل المستخدم المسجّل فقط."""
+    group = age_group_for(age_days)
+    gid = group.id if group else None
     patient_id = None
-    if age is not None:
-        patient = Patient(name=patient_name, gender=gender, age=age,
+    if age_value is not None:
+        patient = Patient(name=patient_name, gender=gender, age_value=age_value,
+                          age_unit=age_unit, age_days=age_days, age_group_id=gid,
                           is_pregnant=bool(pregnant), user_id=user_id)
         db.session.add(patient)
         db.session.flush()
         patient_id = patient.patient_id
 
-    check = InteractionCheck(check_date=datetime.now(),
-                             user_id=user_id, patient_id=patient_id)
+    check = InteractionCheck(check_date=datetime.now(), user_id=user_id,
+                             patient_id=patient_id, age_days=age_days, age_group_id=gid)
     db.session.add(check)
     db.session.flush()
 
@@ -375,6 +493,15 @@ def save_check(user_id, med_ids, age, pregnant, cond_ids, patient_name=None, gen
 # المسارات
 # ============================================================
 
+def safe_log(title):
+    """يطبع تفاصيل الخطأ في السجل دون أن يتسبب هو نفسه في خطأ."""
+    try:
+        import traceback as _tb
+        print(title, _tb.format_exc().encode('utf-8', 'replace').decode('utf-8', 'replace'))
+    except Exception:
+        pass
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     """صفحة فحص التداخل: مفتوحة للجميع."""
@@ -383,7 +510,7 @@ def index():
     for m in Medication.query.order_by(Medication.scientific_name).all():
         known += [m.scientific_name, m.trade_name]
 
-    form = {'drugs': [], 'age': None, 'pregnant': False, 'conditions': [],
+    form = {'drugs': [], 'age': None, 'age_unit': 'year', 'pregnant': False, 'conditions': [],
             'patient_name': '', 'gender': ''}
     result, error = None, None
     is_pharmacist = session.get('role') == 'pharmacist'
@@ -391,15 +518,16 @@ def index():
     if request.method == 'GET' and session.get('role') == 'user':
         prof = UserHealthProfile.query.get(session['user_id'])
         if prof:
-            form['age'] = prof.age
+            form['age'] = prof.age_value
+            form['age_unit'] = prof.age_unit or 'year'
             form['pregnant'] = bool(prof.is_pregnant)
         form['conditions'] = [r[0] for r in db.session.query(UserChronicCondition.condition_id)
                               .filter_by(user_id=session['user_id']).all()]
 
     if request.method == 'POST':
         names = [n for n in request.form.get('drugs', '').split('|') if n.strip()][:10]
-        age_raw = request.form.get('age', '')
-        age = int(age_raw) if age_raw.isdigit() and 0 < int(age_raw) < 121 else None
+        age, age_unit, age_days, age_err = parse_age(request.form.get('age', ''),
+                                                     request.form.get('age_unit', 'year'))
         pregnant = 'pregnant' in request.form
         valid_ids = {c.id for c in conditions}
         cond_ids = [int(x) for x in request.form.getlist('conditions')
@@ -411,22 +539,35 @@ def index():
             gender = request.form.get('gender', '')
             gender = gender if gender in ('ذكر', 'أنثى') else None
 
-        form = {'drugs': names, 'age': age, 'pregnant': pregnant, 'conditions': cond_ids,
+        form = {'drugs': names, 'age': age, 'age_unit': age_unit, 'pregnant': pregnant, 'conditions': cond_ids,
                 'patient_name': patient_name or '', 'gender': gender or ''}
 
-        if not names:
+        if age_err:
+            error = age_err
+        elif not names:
             error = 'أدخل اسم دواء واحد على الأقل.'
         elif is_pharmacist and patient_name and age is None:
             error = 'عمر المريض مطلوب عند إدخال اسمه.'
         else:
-            result = run_check(names, age, pregnant, cond_ids)
-            if not result['med_ids']:
+            try:
+                result = run_check(names, age_days, pregnant, cond_ids)
+            except Exception:
+                db.session.rollback()
+                safe_log('[خطأ في تحليل الفحص]')
+                result, error = None, 'تعذّر تحليل الفحص الآن، حاول مرة أخرى.'
+            if result is not None and not result['med_ids']:
                 error = 'لم نجد أيًّا من الأدوية المدخلة في قاعدة المعرفة.'
                 result = None
-            elif 'user_id' in session:
-                save_check(session['user_id'], result['med_ids'], age, pregnant, cond_ids,
-                           patient_name, gender)
-                result['saved'] = True
+            elif result is not None and 'user_id' in session:
+                try:
+                    save_check(session['user_id'], result['med_ids'], age, age_unit, age_days,
+                               pregnant, cond_ids, patient_name, gender)
+                    result['saved'] = True
+                except Exception:
+                    # فشل الحفظ في السجل لا يمنع عرض نتيجة الفحص
+                    db.session.rollback()
+                    safe_log('[خطأ في حفظ الفحص]')
+                    flash('ظهرت نتيجة الفحص، لكن تعذّر حفظها في سجلك.')
 
     return render_template('index.html', conditions=conditions, known=sorted(set(known)),
                            form=form, result=result, error=error)
@@ -524,7 +665,7 @@ def read_medication_form():
     data = {
         'scientific_name': scientific_name,
         'trade_name': trade_name,
-        'dosage_form': request.form.get('dosage_form', '').strip() or None,
+        'dosage_form_id': int(request.form.get('dosage_form_id', '')) if request.form.get('dosage_form_id', '').isdigit() else None,
         'concentration': request.form.get('concentration', '').strip() or None,
         'dosage': request.form.get('dosage', '').strip()[:100] or None,
         'warning': request.form.get('warning', '').strip() or None,
@@ -532,6 +673,8 @@ def read_medication_form():
     }
     if not scientific_name or not trade_name:
         return data, 'الاسم العلمي والاسم التجاري مطلوبان'
+    if data['dosage_form_id'] is not None and not DosageForm.query.get(data['dosage_form_id']):
+        return data, 'الشكل الدوائي غير موجود'
     return data, None
 
 
@@ -551,7 +694,8 @@ def admin_medications():
     classifications = DrugClassification.query.order_by(DrugClassification.name_arabic).all()
     class_names = {c.id: c.name_arabic for c in classifications}
     meds = Medication.query.order_by(Medication.id.desc()).all()
-    return render_template('admin/medications.html', meds=meds,
+    return render_template('admin/medications.html', dosage_forms=DosageForm.query.all(),
+                           form_names={f.id: f.name_arabic for f in DosageForm.query.all()}, meds=meds,
                            classifications=classifications, class_names=class_names)
 
 
@@ -571,7 +715,8 @@ def admin_edit_medication(med_id):
             return redirect(url_for('admin_medications'))
 
     classifications = DrugClassification.query.order_by(DrugClassification.name_arabic).all()
-    return render_template('admin/medication_edit.html', med=med, classifications=classifications)
+    return render_template('admin/medication_edit.html', med=med, classifications=classifications,
+                           dosage_forms=DosageForm.query.all())
 
 
 @app.route('/admin/medications/<int:med_id>/delete', methods=['POST'])
@@ -715,8 +860,9 @@ def read_contra_form(exclude_id=None):
     """يقرأ نموذج مانع الاستعمال ويتحقق منه. يعيد (البيانات، رسالة الخطأ)."""
     med_raw = request.form.get('medication_id', '')
     cond_raw = request.form.get('condition_id', '')
-    from_raw = request.form.get('age_from', '').strip()
-    to_raw = request.form.get('age_to', '').strip()
+    fv, fu, fd, ferr = parse_age(request.form.get('age_from', ''), request.form.get('age_from_unit', 'year'))
+    tv, tu, td, terr = parse_age(request.form.get('age_to', ''), request.form.get('age_to_unit', 'year'))
+    group_raw = request.form.get('age_group_id', '')
     severity = request.form.get('severity', '')
     description = request.form.get('description', '').strip()
 
@@ -724,8 +870,9 @@ def read_contra_form(exclude_id=None):
         'medication_id': int(med_raw) if med_raw.isdigit() else None,
         'condition_id': int(cond_raw) if cond_raw.isdigit() else None,
         'pregnancy_risk': 'pregnancy_risk' in request.form,
-        'age_from': int(from_raw) if from_raw.isdigit() else None,
-        'age_to': int(to_raw) if to_raw.isdigit() else None,
+        'min_age_days': fd,
+        'max_age_days': td,
+        'age_group_id': int(group_raw) if group_raw.isdigit() else None,
         'severity': severity,
         'description': description,
     }
@@ -734,12 +881,13 @@ def read_contra_form(exclude_id=None):
         return data, 'اختر دواءً صالحًا'
     if data['condition_id'] is not None and not HealthCondition.query.get(data['condition_id']):
         return data, 'المرض المختار غير موجود'
-    for raw, key in ((from_raw, 'age_from'), (to_raw, 'age_to')):
-        if raw and (data[key] is None or not (0 <= data[key] <= 120)):
-            return data, 'حدود العمر يجب أن تكون أرقامًا بين 0 و120'
-    if data['age_from'] is not None and data['age_to'] is not None and data['age_from'] > data['age_to']:
+    if ferr or terr:
+        return data, 'حدود العمر غير صالحة'
+    if data['age_group_id'] is not None and not AgeGroup.query.get(data['age_group_id']):
+        return data, 'الفئة العمرية غير موجودة'
+    if fd is not None and td is not None and fd > td:
         return data, 'بداية نطاق العمر يجب ألا تتجاوز نهايته'
-    has_age = data['age_from'] is not None or data['age_to'] is not None
+    has_age = fd is not None or td is not None or data['age_group_id'] is not None
     if data['condition_id'] is None and not data['pregnancy_risk'] and not has_age:
         return data, 'حدّد سببًا واحدًا على الأقل: مرض، أو حمل، أو نطاق عمر'
     if severity not in SEVERITY_AR:
@@ -750,7 +898,8 @@ def read_contra_form(exclude_id=None):
     q = DrugContraindication.query.filter_by(
         medication_id=data['medication_id'], condition_id=data['condition_id'],
         pregnancy_risk=data['pregnancy_risk'],
-        age_from=data['age_from'], age_to=data['age_to'])
+        min_age_days=data['min_age_days'], max_age_days=data['max_age_days'],
+        age_group_id=data['age_group_id'])
     if exclude_id is not None:
         q = q.filter(DrugContraindication.id != exclude_id)
     if q.first():
@@ -780,7 +929,7 @@ def admin_contraindications():
     med_names = {m.id: f'{m.scientific_name} ({m.trade_name})' for m in meds}
     cond_names = {c.id: c.condition_name for c in conditions}
     contras = DrugContraindication.query.order_by(DrugContraindication.id.desc()).all()
-    return render_template('admin/contraindications.html', meds=meds, conditions=conditions,
+    return render_template('admin/contraindications.html', age_groups=AgeGroup.query.order_by(AgeGroup.sort_order).all(), meds=meds, conditions=conditions,
                            med_names=med_names, cond_names=cond_names,
                            contras=contras, severity_ar=SEVERITY_AR)
 
@@ -807,6 +956,7 @@ def admin_edit_contraindication(contra_id):
     meds = Medication.query.order_by(Medication.scientific_name).all()
     conditions = HealthCondition.query.order_by(HealthCondition.condition_name).all()
     return render_template('admin/contraindication_edit.html', contra=contra, meds=meds,
+                           age_groups=AgeGroup.query.order_by(AgeGroup.sort_order).all(),
                            conditions=conditions, severity_ar=SEVERITY_AR)
 
 
@@ -1029,19 +1179,21 @@ def health_profile():
               .filter_by(user_id=uid).all()}
 
     if request.method == 'POST':
-        age_raw = request.form.get('age', '').strip()
-        age = int(age_raw) if age_raw.isdigit() else None
+        age, age_unit, age_days, age_err = parse_age(request.form.get('age', ''),
+                                                     request.form.get('age_unit', 'year'))
         new_ids = {int(x) for x in request.form.getlist('conditions')
                    if x.isdigit() and int(x) in valid_ids}
 
-        if age_raw and (age is None or not (1 <= age <= 120)):
-            flash('العمر يجب أن يكون بين 1 و120')
+        if age_err:
+            flash(age_err)
         else:
             try:
                 if prof is None:
                     prof = UserHealthProfile(user_id=uid)
                     db.session.add(prof)
-                prof.age = age
+                group = age_group_for(age_days)
+                prof.age_value, prof.age_unit, prof.age_days = age, age_unit, age_days
+                prof.age_group_id = group.id if group else None
                 prof.is_pregnant = 'pregnant' in request.form
 
                 removed = chosen - new_ids
@@ -1076,13 +1228,18 @@ def rebuild_check(check):
                           'dosage': m.dosage}
 
     patient = Patient.query.get(check.patient_id) if check.patient_id else None
-    age = patient.age if patient else None
+    age_days = check.age_days
+    if patient:
+        age_days = patient.age_days if patient.age_days is not None \
+            else age_to_days(patient.age_value, patient.age_unit)
     pregnant = bool(patient.is_pregnant) if patient else False
     cond_ids = [r[0] for r in db.session.query(InteractionCondition.condition_id)
                 .filter_by(interaction_check_id=check.check_id).all()]
 
-    result = analyze(meds, age, pregnant, cond_ids)
-    result['age'] = age
+    result = analyze(meds, age_days, pregnant, cond_ids)
+    result['age'] = patient.age_value if patient else None
+    result['age_unit'] = patient.age_unit if patient else None
+    result['age_text'] = age_text(patient.age_value, patient.age_unit) if patient else ''
     result['pregnant'] = pregnant
     result['patient_name'] = patient.name if patient else None
     result['gender'] = patient.gender if patient else None
@@ -1577,8 +1734,54 @@ def reset_password():
 
     return render_template('auth/reset.html', username=user.username)
 
-with app.app_context():
-    db.create_all()
+# ============================================================
+# شبكة أمان: لا تظهر صفحة "Internal Server Error" الخام للمستخدم
+# ============================================================
+
+import traceback
+from werkzeug.exceptions import HTTPException
+
+ERROR_PAGE = """<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>حدث خطأ</title>
+<style>body{font-family:Tahoma,Arial,sans-serif;background:#f5f7fa;color:#222;display:flex;
+align-items:center;justify-content:center;min-height:100vh;margin:0}
+.box{background:#fff;padding:32px 40px;border-radius:12px;box-shadow:0 2px 12px #0001;
+max-width:420px;text-align:center}a{color:#0a7d6b}</style></head>
+<body><div class="box"><h2>تعذّر إكمال الطلب</h2>
+<p>حدث خطأ غير متوقع. تم تسجيله، وبياناتك لم تتأثر. حاول مرة أخرى.</p>
+<p><a href="/">العودة إلى الصفحة الرئيسية</a></p></div></body></html>"""
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(exc):
+    if isinstance(exc, HTTPException):
+        return exc
+    try:
+        db.session.rollback()
+    except Exception:
+        pass
+    try:
+        print('[خطأ غير متوقع]', request.method, request.path)
+        traceback.print_exception(type(exc), exc, exc.__traceback__)
+    except Exception:
+        pass
+    return ERROR_PAGE, 500
+
+
+@app.teardown_request
+def cleanup_session(exc):
+    if exc is not None:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+
+
+try:
+    with app.app_context():
+        db.create_all()
+except Exception as exc:
+    print('[تحذير] تعذّر التحقق من الجداول عند البدء:', exc)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=os.environ.get('FLASK_DEBUG') == '1')
