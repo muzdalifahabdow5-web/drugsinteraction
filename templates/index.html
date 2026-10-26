@@ -680,15 +680,19 @@
       {% endif %}
 
       <div class="info-sections">
-        <!-- من نحن -->
-        <section class="info-card about-card" id="about" aria-labelledby="about-title">
-          <p class="eyebrow">من نحن</p>
-          <h2 id="about-title" class="section-title">نظام يجعل السلامة الدوائية أوضح وأسهل</h2>
-          <p class="lead">«تداخل الأدوية» مشروع تقني من كلية الجزيرة التقنية، يساعد المرضى والصيادلة على التعرّف بسرعة على التداخلات المحتملة بين الأدوية، مع مراعاة العمر والأمراض المصاحبة وحالة الحمل، وعرض النتيجة بلغة عربية واضحة ودرجات خطورة مفهومة.</p>
-        </section>
-
         <!-- الرؤية والرسالة وأهداف الموقع: قوائم منسدلة تُفتح عند الضغط -->
         <div class="accordion">
+          <details class="acc" id="about">
+            <summary>
+              <span class="acc-title"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> من نحن</span>
+              <i class="fa-solid fa-chevron-down acc-chevron" aria-hidden="true"></i>
+            </summary>
+            <div class="acc-body">
+              <p style="font-weight:600; color:var(--text); margin-bottom:.5rem;">نظام يجعل السلامة الدوائية أوضح وأسهل</p>
+              <p>«تداخل الأدوية» مشروع تقني من كلية الجزيرة التقنية، يساعد المرضى والصيادلة على التعرّف بسرعة على التداخلات المحتملة بين الأدوية، مع مراعاة العمر والأمراض المصاحبة وحالة الحمل، وعرض النتيجة بلغة عربية واضحة ودرجات خطورة مفهومة.</p>
+            </div>
+          </details>
+
           <details class="acc" id="vision">
             <summary>
               <span class="acc-title"><i class="fa-solid fa-eye" aria-hidden="true"></i> رؤيتنا</span>
@@ -796,6 +800,24 @@
       closeBtn.addEventListener('click', function() {
         modal.classList.remove('active');
       });
+    })();
+
+    /* فتح القائمة المنسدلة تلقائياً عند الانتقال إليها من رابط (مثل "من نحن" في القائمة العلوية) */
+    (function() {
+      function openFromHash() {
+        var id = location.hash.slice(1);
+        if (!id) return;
+        var el = document.getElementById(id);
+        if (el && el.tagName === 'DETAILS') {
+          el.open = true;
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+      window.addEventListener('hashchange', openFromHash);
+      document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+        a.addEventListener('click', function() { setTimeout(openFromHash, 0); });
+      });
+      openFromHash();
     })();
 
     /* التمرير التلقائي للنتيجة عند ظهورها */
