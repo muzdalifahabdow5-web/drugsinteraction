@@ -400,6 +400,22 @@
   }
   .goals-list li i { color: var(--safe-solid); margin-top: .35rem; flex: none; }
 
+  /* القوائم المنسدلة: الرؤية والرسالة وأهداف الموقع */
+  .accordion { display: grid; gap: .9rem; }
+  .acc { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow); overflow: hidden; }
+  .acc summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    min-height: 60px; padding: .9rem 1.25rem; cursor: pointer; list-style: none;
+    font-weight: 600; font-size: var(--fs-lg); color: var(--primary); transition: background-color .15s;
+  }
+  .acc summary::-webkit-details-marker { display: none; }
+  .acc summary:hover { background: var(--primary-soft); }
+  .acc-title { display: inline-flex; align-items: center; gap: .6rem; }
+  .acc-chevron { font-size: .85rem; color: var(--text-soft); transition: transform .25s var(--ease); }
+  .acc[open] .acc-chevron { transform: rotate(180deg); }
+  .acc[open] summary { border-bottom: 1px solid var(--border); }
+  .acc-body { padding: 1.1rem 1.25rem 1.25rem; color: var(--text-soft); font-size: var(--fs-sm); animation: drop-in .2s var(--ease); }
+
   .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1.25rem; counter-reset: none; }
   .step-card {
     position: relative; text-align: center; background: var(--surface); border: 1px solid var(--border);
@@ -671,28 +687,43 @@
           <p class="lead">«تداخل الأدوية» مشروع تقني من كلية الجزيرة التقنية، يساعد المرضى والصيادلة على التعرّف بسرعة على التداخلات المحتملة بين الأدوية، مع مراعاة العمر والأمراض المصاحبة وحالة الحمل، وعرض النتيجة بلغة عربية واضحة ودرجات خطورة مفهومة.</p>
         </section>
 
-        <!-- الرؤية والرسالة -->
-        <div class="content-grid-2">
-          <section class="info-card" aria-labelledby="vision-title">
-            <h3 id="vision-title"><i class="fa-solid fa-eye" aria-hidden="true"></i> رؤيتنا</h3>
-            <p>أن نكون مرجعاً عربياً موثوقاً وسهل الاستخدام في الوعي بالسلامة الدوائية، يصل إليه كل من يتناول دواءً أو يصرفه.</p>
-          </section>
-          <section class="info-card" aria-labelledby="mission-title">
-            <h3 id="mission-title"><i class="fa-solid fa-bullseye" aria-hidden="true"></i> رسالتنا</h3>
-            <p>تقديم أداة فحص سريعة ودقيقة وواضحة، تدعم القرار الدوائي الآمن وتحدّ من الأخطاء الناتجة عن الجمع غير المناسب بين الأدوية.</p>
-          </section>
-        </div>
+        <!-- الرؤية والرسالة وأهداف الموقع: قوائم منسدلة تُفتح عند الضغط -->
+        <div class="accordion">
+          <details class="acc" id="vision">
+            <summary>
+              <span class="acc-title"><i class="fa-solid fa-eye" aria-hidden="true"></i> رؤيتنا</span>
+              <i class="fa-solid fa-chevron-down acc-chevron" aria-hidden="true"></i>
+            </summary>
+            <div class="acc-body">
+              <p>أن نكون مرجعاً عربياً موثوقاً وسهل الاستخدام في الوعي بالسلامة الدوائية، يصل إليه كل من يتناول دواءً أو يصرفه.</p>
+            </div>
+          </details>
 
-        <!-- أهداف الموقع -->
-        <section class="info-card" id="goals" aria-labelledby="goals-title">
-          <h3 id="goals-title"><i class="fa-solid fa-flag-checkered" aria-hidden="true"></i> أهداف الموقع</h3>
-          <ul class="goals-list">
-            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>الحد من الأخطاء الدوائية الناتجة عن التداخلات غير المقصودة.</span></li>
-            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>نشر الوعي بأهمية مراجعة الأدوية قبل تناولها معاً.</span></li>
-            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>دعم الصيادلة بأداة مساعدة تُسرّع الفحص وتوثّق نتائجه.</span></li>
-            <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>تخصيص النتيجة بحسب العمر والأمراض المصاحبة وحالة الحمل.</span></li>
-          </ul>
-        </section>
+          <details class="acc" id="mission">
+            <summary>
+              <span class="acc-title"><i class="fa-solid fa-bullseye" aria-hidden="true"></i> رسالتنا</span>
+              <i class="fa-solid fa-chevron-down acc-chevron" aria-hidden="true"></i>
+            </summary>
+            <div class="acc-body">
+              <p>تقديم أداة فحص سريعة ودقيقة وواضحة، تدعم القرار الدوائي الآمن وتحدّ من الأخطاء الناتجة عن الجمع غير المناسب بين الأدوية.</p>
+            </div>
+          </details>
+
+          <details class="acc" id="goals">
+            <summary>
+              <span class="acc-title"><i class="fa-solid fa-flag-checkered" aria-hidden="true"></i> أهداف الموقع</span>
+              <i class="fa-solid fa-chevron-down acc-chevron" aria-hidden="true"></i>
+            </summary>
+            <div class="acc-body">
+              <ul class="goals-list">
+                <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>الحد من الأخطاء الدوائية الناتجة عن التداخلات غير المقصودة.</span></li>
+                <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>نشر الوعي بأهمية مراجعة الأدوية قبل تناولها معاً.</span></li>
+                <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>دعم الصيادلة بأداة مساعدة تُسرّع الفحص وتوثّق نتائجه.</span></li>
+                <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>تخصيص النتيجة بحسب العمر والأمراض المصاحبة وحالة الحمل.</span></li>
+              </ul>
+            </div>
+          </details>
+        </div>
 
         <!-- خطوات الفحص -->
         <section id="steps" aria-labelledby="steps-title">
@@ -755,16 +786,15 @@
   </footer>
 
   <script>
-    /* نافذة الترحيب: تظهر عند كل زيارة للموقع (مرة لكل جلسة متصفح) */
+    /* نافذة الترحيب: تظهر في كل مرة يزور فيها المستخدم الموقع (كل تحميل للصفحة)،
+       عدا بعد إرسال نموذج الفحص حتى لا تزعجه أثناء الاستخدام */
     (function() {
       var modal = document.getElementById('welcome-modal');
       var closeBtn = document.getElementById('close-modal-btn');
-      var seen = false;
-      try { seen = sessionStorage.getItem('welcomed'); } catch (e) {}
-      if (!seen) modal.classList.add('active');
+      var afterSubmit = {{ 'true' if request.method == 'POST' else 'false' }};
+      if (!afterSubmit) modal.classList.add('active');
       closeBtn.addEventListener('click', function() {
         modal.classList.remove('active');
-        try { sessionStorage.setItem('welcomed', 'true'); } catch (e) {}
       });
     })();
 
