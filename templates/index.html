@@ -108,7 +108,7 @@
 
   .container { width: min(100% - 2rem, var(--maxw)); margin-inline: auto; }
 
-  /* نافذة الترحيب التي تظهر لمرة واحدة */
+  /* نافذة الترحيب التي تظهر عند كل زيارة للموقع */
   .welcome-modal-overlay {
     position: fixed; inset: 0; background: rgba(9, 19, 31, 0.75);
     backdrop-filter: blur(8px); z-index: 100; display: grid; place-items: center;
@@ -233,6 +233,23 @@
     width: 38px; min-height: 36px; font-size: 1.15rem; transition: background .15s;
   }
   .chip button:hover { background: var(--primary-hover); }
+
+  /* قائمة اقتراحات الأدوية (بديل datalist لتظهر بنفس الشكل على الهاتف والكمبيوتر) */
+  .chip-wrap { position: relative; }
+  .suggest-box {
+    position: absolute; top: calc(100% + 6px); right: 0; left: 0; z-index: 60;
+    margin: 0; padding: .4rem; list-style: none;
+    background: var(--surface); border: 1.5px solid var(--border-strong); border-radius: var(--r-md);
+    box-shadow: var(--shadow-lg); max-height: 240px; overflow-y: auto;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    animation: drop-in .2s var(--ease);
+  }
+  .suggest-box[hidden] { display: none; }
+  .suggest-box li {
+    min-height: 44px; display: flex; align-items: center; padding: .4rem .8rem;
+    border-radius: var(--r-sm); cursor: pointer; font-size: var(--fs-sm); color: var(--text);
+  }
+  .suggest-box li:hover, .suggest-box li.active { background: var(--primary-soft); color: var(--primary); }
 
   /* نظام المنسدلة للأمراض المصاحبة بدون تخريب التصميم */
   .custom-dropdown-wrapper { position: relative; width: 100%; }
@@ -428,7 +445,7 @@
 </head>
 <body>
 
-  <!-- نافذة ترحيبية تظهر لمرة واحدة فقط -->
+  <!-- نافذة ترحيبية تظهر عند كل زيارة للموقع -->
   <div class="welcome-modal-overlay" id="welcome-modal">
     <div class="welcome-modal">
       <h2><i class="fa-solid fa-pills"></i> أهلاً بك في نظام تداخل الأدوية</h2>
@@ -485,9 +502,12 @@
 
         <div class="field">
           <label for="drug-input">الأدوية</label>
-          <div class="chipbox" id="chipbox">
-            <div id="chips"></div>
-            <input type="text" id="drug-input" list="known-drugs" autocomplete="off" placeholder="اكتب اسم الدواء ثم اضغط Enter">
+          <div class="chip-wrap">
+            <div class="chipbox" id="chipbox">
+              <div id="chips"></div>
+              <input type="text" id="drug-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="drug-suggest" placeholder="اكتب اسم الدواء ثم اضغط Enter">
+            </div>
+            <ul class="suggest-box" id="drug-suggest" role="listbox" hidden></ul>
           </div>
           <datalist id="known-drugs">
             {% for n in known %}<option value="{{ n }}">{% endfor %}
@@ -735,16 +755,16 @@
   </footer>
 
   <script>
-    /* نافذة الترحيب التي تظهر لمرة واحدة فقط */
+    /* نافذة الترحيب: تظهر عند كل زيارة للموقع (مرة لكل جلسة متصفح) */
     (function() {
       var modal = document.getElementById('welcome-modal');
       var closeBtn = document.getElementById('close-modal-btn');
-      if (!localStorage.getItem('welcomed')) {
-        modal.classList.add('active');
-      }
+      var seen = false;
+      try { seen = sessionStorage.getItem('welcomed'); } catch (e) {}
+      if (!seen) modal.classList.add('active');
       closeBtn.addEventListener('click', function() {
         modal.classList.remove('active');
-        localStorage.setItem('welcomed', 'true');
+        try { sessionStorage.setItem('welcomed', 'true'); } catch (e) {}
       });
     })();
 
@@ -835,15 +855,83 @@
         render();
       }
 
+      /* قائمة اقتراحات الأدوية: نفس الشكل على الهاتف والكمبيوتر */
+      var suggestEl = document.getElementById('drug-suggest');
+      var wrapEl = suggestEl.parentNode;
+      var known = Array.prototype.map.call(document.querySelectorAll('#known-drugs option'), function (o) { return o.value; });
+      var activeIdx = -1;
+
+      function hideSuggest() {
+        suggestEl.hidden = true;
+        suggestEl.innerHTML = '';
+        activeIdx = -1;
+        input.setAttribute('aria-expanded', 'false');
+      }
+
+      function setActive() {
+        Array.prototype.forEach.call(suggestEl.children, function (li, i) {
+          li.classList.toggle('active', i === activeIdx);
+          if (i === activeIdx) li.scrollIntoView({ block: 'nearest' });
+        });
+      }
+
+      function showSuggest() {
+        var q = input.value.trim().toLowerCase();
+        var taken = chips.map(function (c) { return c.toLowerCase(); });
+        var list = known.filter(function (n) {
+          var l = n.toLowerCase();
+          return taken.indexOf(l) === -1 && (!q || l.indexOf(q) !== -1);
+        }).slice(0, 50);
+        suggestEl.innerHTML = '';
+        activeIdx = -1;
+        if (!list.length) { hideSuggest(); return; }
+        list.forEach(function (n) {
+          var li = document.createElement('li');
+          li.setAttribute('role', 'option');
+          li.textContent = n;
+          /* منع فقدان التركيز على الحقل عند الضغط على اقتراح */
+          li.addEventListener('mousedown', function (e) { e.preventDefault(); });
+          li.addEventListener('click', function () { add(n); hideSuggest(); input.focus(); });
+          suggestEl.appendChild(li);
+        });
+        suggestEl.hidden = false;
+        input.setAttribute('aria-expanded', 'true');
+      }
+
+      input.addEventListener('input', showSuggest);
+      input.addEventListener('focus', showSuggest);
+      document.addEventListener('click', function (e) {
+        if (!wrapEl.contains(e.target)) hideSuggest();
+      });
+
       input.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ',' || e.key === '،') {
+        var items = suggestEl.children;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          if (suggestEl.hidden) showSuggest();
+          items = suggestEl.children;
+          if (!items.length) return;
           e.preventDefault();
-          add(input.value);
+          if (e.key === 'ArrowDown') {
+            activeIdx = (activeIdx + 1) % items.length;
+          } else {
+            activeIdx = activeIdx <= 0 ? items.length - 1 : activeIdx - 1;
+          }
+          setActive();
+        } else if (e.key === 'Escape') {
+          hideSuggest();
+        } else if (e.key === 'Enter' || e.key === ',' || e.key === '،') {
+          e.preventDefault();
+          if (e.key === 'Enter' && activeIdx >= 0 && items[activeIdx]) {
+            add(items[activeIdx].textContent);
+          } else {
+            add(input.value);
+          }
+          hideSuggest();
         } else if (e.key === 'Backspace' && !input.value && chips.length) {
           chips.pop(); render();
         }
       });
-      input.addEventListener('change', function () { add(input.value); });
+      input.addEventListener('change', function () { add(input.value); hideSuggest(); });
       document.getElementById('check-form').addEventListener('submit', function () {
         add(input.value);
       });
