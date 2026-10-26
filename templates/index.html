@@ -108,7 +108,7 @@
 
   .container { width: min(100% - 2rem, var(--maxw)); margin-inline: auto; }
 
-  /* نافذة الترحيب التي تظهر عند كل زيارة للموقع */
+  /* نافذة الترحيب التي تظهر عند فتح الموقع */
   .welcome-modal-overlay {
     position: fixed; inset: 0; background: rgba(9, 19, 31, 0.75);
     backdrop-filter: blur(8px); z-index: 100; display: grid; place-items: center;
@@ -124,6 +124,7 @@
   @keyframes modal-pop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   .welcome-modal h2 { color: var(--primary); font-size: var(--fs-xl); margin-bottom: 1rem; }
   .welcome-modal p { color: var(--text-soft); font-size: var(--fs-sm); margin-bottom: 1.5rem; line-height: 1.7; }
+  .welcome-logo { width: 130px; height: 130px; border-radius: 24px; display: block; margin: 0 auto 1.25rem; box-shadow: var(--shadow); }
 
   /* الأزرار */
   .btn {
@@ -161,7 +162,7 @@
     display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 68px;
   }
   .brand { display: inline-flex; align-items: center; gap: .65rem; color: var(--text); }
-  .brand svg { width: 38px; height: 38px; flex: none; }
+  .brand-logo { width: 46px; height: 46px; border-radius: 12px; object-fit: cover; flex: none; display: block; }
   .brand b { font-weight: 600; font-size: var(--fs-lg); }
   .nav { display: flex; align-items: center; gap: .6rem; }
 
@@ -440,6 +441,7 @@
 
   .site-footer { margin-top: 4rem; background: var(--surface); border-top: 1px solid var(--border); padding: 2.5rem 0 1.5rem; }
   .footer-content { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; text-align: center; }
+  .footer-content .brand-logo { width: 56px; height: 56px; border-radius: 14px; }
   .social-icons { display: flex; gap: 1rem; }
   .social-icon-btn {
     width: 40px; height: 40px; border-radius: 50%; display: inline-grid; place-items: center;
@@ -456,14 +458,27 @@
 
   @media (max-width: 768px) {
     .inputs-row { grid-template-columns: 1fr; gap: 1.25rem; }
+
+    /* تصغير أزرار الهيدر في الهاتف حتى لا يظهر زر الدخول كبيراً ودائرياً */
+    .site-header .container { min-height: 60px; gap: .5rem; }
+    .nav { gap: .4rem; }
+    .nav .btn {
+      min-height: 36px; padding: .2rem .85rem; font-size: var(--fs-xs);
+      border-radius: var(--r-md); white-space: nowrap; width: auto; flex: none;
+    }
+    .nav .icon-btn { width: 36px; height: 36px; }
+    .nav .icon-btn svg { width: 18px; height: 18px; }
+    .brand-logo { width: 38px; height: 38px; border-radius: 10px; }
+    .brand b { font-size: var(--fs-md); }
   }
   </style>
 </head>
 <body>
 
-  <!-- نافذة ترحيبية تظهر عند كل زيارة للموقع -->
+  <!-- نافذة ترحيبية تظهر عند فتح الموقع (مرة واحدة في كل جلسة) -->
   <div class="welcome-modal-overlay" id="welcome-modal">
     <div class="welcome-modal">
+      <img class="welcome-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="DrugWise">
       <h2><i class="fa-solid fa-pills"></i> أهلاً بك في نظام تداخل الأدوية</h2>
       <p>منصة ذكية متكاملة تم تصميمه خصيصاً لدعم الصيادلة والمرضى في الكشف اللحظي عن التداخلات الدوائية الخطيرة، لضمان أعلى معايير الأمان والسلامة الدوائية.</p>
       <button type="button" class="btn btn-primary" id="close-modal-btn">ابدأ الآن</button>
@@ -473,18 +488,7 @@
   <header class="site-header">
     <div class="container">
       <a class="brand" href="{{ url_for('index') }}">
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <g transform="translate(32 32)">
-            <g transform="rotate(45)">
-              <path d="M0 -11H-19A11 11 0 0 0 -19 11H0Z" fill="#fff" stroke="#9DB6D4" stroke-width="1.5"/>
-              <path d="M0 -11H19A11 11 0 0 1 19 11H0Z" fill="#4A8FE0"/>
-            </g>
-            <g transform="rotate(-45)">
-              <path d="M0 -11H-19A11 11 0 0 0 -19 11H0Z" fill="#4A8FE0"/>
-              <path d="M0 -11H19A11 11 0 0 1 19 11H0Z" fill="#fff" stroke="#9DB6D4" stroke-width="1.5"/>
-            </g>
-          </g>
-        </svg>
+        <img class="brand-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="DrugWise">
         <b>تداخل الأدوية</b>
       </a>
 
@@ -766,37 +770,32 @@
   <footer class="site-footer">
     <div class="container footer-content">
       <div class="brand">
-        <svg viewBox="0 0 64 64" aria-hidden="true" style="width:38px; height:38px;">
-          <g transform="translate(32 32)">
-            <g transform="rotate(45)">
-              <path d="M0 -11H-19A11 11 0 0 0 -19 11H0Z" fill="#fff" stroke="#9DB6D4" stroke-width="1.5"/>
-              <path d="M0 -11H19A11 11 0 0 1 19 11H0Z" fill="#4A8FE0"/>
-            </g>
-            <g transform="rotate(-45)">
-              <path d="M0 -11H-19A11 11 0 0 0 -19 11H0Z" fill="#4A8FE0"/>
-              <path d="M0 -11H19A11 11 0 0 1 19 11H0Z" fill="#fff" stroke="#9DB6D4" stroke-width="1.5"/>
-            </g>
-          </g>
-        </svg>
+        <img class="brand-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="DrugWise">
         <b>تداخل الأدوية</b>
       </div>
       <div class="social-icons">
         <a href="#" class="social-icon-btn" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in" aria-hidden="true"></i></a>
         <a href="#" class="social-icon-btn" aria-label="Facebook"><i class="fa-brands fa-facebook-f" aria-hidden="true"></i></a>
         <a href="#" class="social-icon-btn" aria-label="Telegram"><i class="fa-brands fa-telegram" aria-hidden="true"></i></a>
+        <a href="#" class="social-icon-btn" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i></a>
       </div>
       <div class="footer-copy">جميع الحقوق محفوظة © 2026 - مشروع نظام الأدوية الخبير | كلية الجزيرة التقنية</div>
     </div>
   </footer>
 
   <script>
-    /* نافذة الترحيب: تظهر في كل مرة يزور فيها المستخدم الموقع (كل تحميل للصفحة)،
-       عدا بعد إرسال نموذج الفحص حتى لا تزعجه أثناء الاستخدام */
+    /* نافذة الترحيب: تظهر مرة واحدة فقط عند فتح الموقع (في كل جلسة جديدة)،
+       ولا تظهر عند التنقل بين الصفحات أو بعد إرسال نموذج الفحص */
     (function() {
       var modal = document.getElementById('welcome-modal');
       var closeBtn = document.getElementById('close-modal-btn');
       var afterSubmit = {{ 'true' if request.method == 'POST' else 'false' }};
-      if (!afterSubmit) modal.classList.add('active');
+      var seen = false;
+      try { seen = sessionStorage.getItem('welcomeShown') === '1'; } catch (e) {}
+      if (!afterSubmit && !seen) {
+        modal.classList.add('active');
+        try { sessionStorage.setItem('welcomeShown', '1'); } catch (e) {}
+      }
       closeBtn.addEventListener('click', function() {
         modal.classList.remove('active');
       });
