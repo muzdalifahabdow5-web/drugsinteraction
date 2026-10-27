@@ -365,6 +365,19 @@
   }
   .save-note { font-size: var(--fs-sm); color: var(--text-soft); text-align: center; }
 
+  /* بطاقة بيانات الدواء الواحد */
+  .drug-title { font-size: var(--fs-lg); font-weight: 600; color: var(--primary); }
+  .drug-title span { font-size: var(--fs-sm); font-weight: 400; color: var(--text-soft); }
+  .drug-facts { margin-top: .6rem; display: grid; gap: .35rem; font-size: var(--fs-sm); color: var(--text-soft); }
+  .drug-facts b { color: var(--text); font-weight: 600; }
+  .drug-sub { font-size: var(--fs-sm); font-weight: 600; color: var(--text); margin: 1.1rem 0 .4rem; }
+  .drug-list li { padding: .7rem 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); color: var(--text-soft); }
+  .drug-list li:first-child { border-top: 0; padding-top: 0; }
+  .drug-list strong { color: var(--text); font-weight: 600; }
+  .drug-list .badge { margin-inline-end: .5rem; }
+  .drug-list .sev-major    { background: var(--major-bg);    color: var(--major-fg);    border-color: var(--major-bd); }
+  .drug-list .sev-moderate { background: var(--moderate-bg); color: var(--moderate-fg); border-color: var(--moderate-bd); }
+
   /* بطاقات التعريف المسبق بأنواع التداخلات */
   .definitions-grid {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 2.5rem;
@@ -533,7 +546,7 @@
             {% for n in known %}<option value="{{ n }}">{% endfor %}
           </datalist>
           <input type="hidden" name="drugs" id="drugs-hidden">
-          <p class="hint">أضف دواءين أو أكثر. اضغط Enter أو الفاصلة بعد كل دواء.</p>
+          <p class="hint">أضف دواءً واحداً لمعرفة بياناته، أو دواءين أو أكثر لفحص التداخل بينها. اضغط Enter أو الفاصلة بعد كل دواء.</p>
         </div>
 
         {% if session.get('role') == 'pharmacist' %}
@@ -660,6 +673,49 @@
             </article>
           {% endfor %}
 
+          {% if result.drug_info %}
+            {% set di = result.drug_info %}
+            <div class="card">
+              <h3 class="card-title">بيانات الدواء</h3>
+              <p class="drug-title">{{ di.scientific_name }} <span>({{ di.trade_name }})</span></p>
+              <ul class="drug-facts">
+                {% if di.classification %}<li><b>التصنيف:</b> {{ di.classification }}</li>{% endif %}
+                {% if di.form %}<li><b>الشكل الدوائي:</b> {{ di.form }}</li>{% endif %}
+                {% if di.concentration %}<li><b>التركيز:</b> {{ di.concentration }}</li>{% endif %}
+                {% if di.dosage %}<li><b>الجرعة:</b> {{ di.dosage }}</li>{% endif %}
+              </ul>
+              {% if di.warning %}<p class="alert-warn" style="margin-top:.9rem;">{{ di.warning }}</p>{% endif %}
+
+              <h4 class="drug-sub">يتداخل مع</h4>
+              {% if di.interactions %}
+                <ul class="drug-list">
+                  {% for i in di.interactions %}
+                    <li>
+                      <span class="badge sev-{{ i.severity }}">{{ i.severity_ar }}</span>
+                      <strong>{{ i.name }}</strong> — {{ i.text }}
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="hint">لا توجد تداخلات مسجّلة لهذا الدواء في قاعدة المعرفة.</p>
+              {% endif %}
+
+              {% if di.contras %}
+                <h4 class="drug-sub">موانع الاستعمال</h4>
+                <ul class="drug-list">
+                  {% for c in di.contras %}
+                    <li>
+                      <span class="badge sev-{{ c.severity }}">{{ c.severity_ar }}</span>
+                      <strong>{{ c.reason }}</strong> — {{ c.text }}
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+
+              <p class="hint" style="margin-top:1rem;">أضف دواءً آخر لفحص التداخل بينهما مباشرة.</p>
+            </div>
+          {% endif %}
+
           {% if result.dosing %}
             <div class="card">
               <h3 class="card-title">الجرعات المسجلة لفئة «{{ result.age_group }}»</h3>
@@ -784,8 +840,7 @@
   </footer>
 
   <script>
-    /* نافذة الترحيب: تظهر مرة واحدة فقط عند فتح الموقع (في كل جلسة جديدة)،
-       ولا تظهر عند التنقل بين الصفحات أو بعد إرسال نموذج الفحص */
+    /* نافذة الترحيب*/
     (function() {
       var modal = document.getElementById('welcome-modal');
       var closeBtn = document.getElementById('close-modal-btn');
