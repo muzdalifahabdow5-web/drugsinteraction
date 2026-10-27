@@ -3,246 +3,937 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <title>تداخل الأدوية</title>
+
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') {
+        t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <style>
-    :root {
-      --ink: #1f2a37;
-      --muted: #5b6776;
-      --line: #c9d2dd;
-      --accent: #3f6aa3;
-      --accent-dark: #2f537f;
-      --bg: #f6f8fb;
-      --card: #ffffff;
-      --red: #b3261e;      --red-bg: #fdeceb;
-      --amber: #8a5a00;    --amber-bg: #fff4d6;
-      --green: #1f6b3d;    --green-bg: #e7f4ec;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Tahoma, "Noto Naskh Arabic", sans-serif;
-      color: var(--ink);
-      background: var(--bg);
-      line-height: 1.7;
-    }
-    a { color: var(--accent); }
-    :focus-visible { outline: 3px solid #f0a500; outline-offset: 2px; }
+  :root {
+    --font: 'Readex Pro', 'Segoe UI', Tahoma, 'Noto Sans Arabic', system-ui, sans-serif;
+    --fs-xs: .8rem;  --fs-sm: .9rem;  --fs-md: 1rem;
+    --fs-lg: 1.2rem; --fs-xl: 1.6rem; --fs-2xl: clamp(2rem, 5vw, 3rem);
+    --r-sm: 8px; --r-md: 14px; --r-lg: 22px; --r-pill: 999px;
+    --maxw: 900px;
+    --ease: cubic-bezier(.2, .7, .2, 1);
 
-    .topbar {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 28px;
-    }
-    .brand { font-weight: 700; color: var(--accent-dark); text-decoration: none; }
-    .nav a { margin-inline-start: 16px; }
+    --bg: #F2F7FC;
+    --bg-tint: #E3EEFA;
+    --surface: #FFFFFF;
+    --surface-2: #F6F9FD;
+    --border: #D9E4F0;
+    --border-strong: #B8C9DD;
 
-    main { max-width: 760px; margin: 0 auto; padding: 8px 20px 56px; }
-    h1 { text-align: center; font-size: 1.6rem; margin: 28px 0 22px; }
+    --text: #10243B;
+    --text-soft: #4B6179;
+    --text-faint: #6B7F95;
 
-    /* حقل الأدوية */
-    .drugs-box {
-      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-      background: var(--card); border: 2px solid var(--ink); border-radius: 12px;
-      padding: 10px 12px; min-height: 54px;
-    }
-    .drugs-box:focus-within { border-color: var(--accent); }
-    .drugs-box input {
-      flex: 1; min-width: 160px; border: 0; outline: 0; font: inherit;
-      background: transparent; padding: 4px;
-    }
-    .chip {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: #e4ecf6; color: var(--accent-dark);
-      border-radius: 999px; padding: 2px 6px 2px 12px; font-size: .95rem;
-    }
-    .chip button {
-      border: 0; background: transparent; cursor: pointer; font-size: 1.1rem;
-      color: var(--accent-dark); line-height: 1; padding: 2px 6px;
-    }
-    .hint { color: var(--muted); font-size: .9rem; margin: 6px 4px 0; }
+    --primary: #2563C9;
+    --primary-hover: #1C50AA;
+    --primary-soft: #E4EEFC;
+    --on-primary: #FFFFFF;
+    --accent: #4A8FE0;
 
-    /* العمر والأمراض والحمل */
-    .options {
-      display: flex; flex-wrap: wrap; gap: 20px 28px; justify-content: center;
-      align-items: flex-start; margin: 26px 0 22px;
-    }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    .field > label, .field > .label { font-weight: 700; }
-    select, summary {
-      font: inherit; background: var(--card); border: 1.5px solid var(--ink);
-      border-radius: 6px; padding: 6px 10px; min-width: 150px;
-    }
-    summary { cursor: pointer; list-style: none; }
-    summary::-webkit-details-marker { display: none; }
-    summary::after { content: "▾"; float: left; }
-    details { position: relative; }
-    .dd-list {
-      position: absolute; z-index: 5; inset-inline-start: 0; top: calc(100% + 4px);
-      min-width: 100%; max-height: 220px; overflow: auto;
-      background: var(--card); border: 1.5px solid var(--ink); border-radius: 6px;
-      padding: 8px 12px;
-    }
-    .dd-list label { display: flex; gap: 8px; align-items: center; padding: 3px 0; white-space: nowrap; }
-    .check { flex-direction: row; align-items: center; gap: 8px; padding-top: 28px; }
-    .check input { width: 22px; height: 22px; }
+    --focus: #1F6FEB;
+    --shadow: 0 1px 2px rgba(16, 36, 59, .05), 0 8px 24px -8px rgba(37, 99, 201, .14);
+    --shadow-lg: 0 2px 4px rgba(16, 36, 59, .05), 0 18px 40px -12px rgba(37, 99, 201, .22);
 
-    .submit-row { text-align: center; }
-    button.primary {
-      font: inherit; font-weight: 700; color: #fff; background: var(--accent);
-      border: 0; border-radius: 10px; padding: 10px 34px; cursor: pointer;
-    }
-    button.primary:hover { background: var(--accent-dark); }
+    --major-bg: #FDECEC;    --major-fg: #A11A1A;    --major-bd: #F0B3B3;    --major-solid: #D32F2F;
+    --moderate-bg: #FFF3DD; --moderate-fg: #8A4A00; --moderate-bd: #F2CD8C; --moderate-solid: #E08A00;
+    --minor-bg: #E6F0FD;    --minor-fg: #1D56AD;    --minor-bd: #B5D0F4;    --minor-solid: #3B82DE;
+    --safe-bg: #E4F6EC;     --safe-fg: #126A38;     --safe-bd: #A8DDBF;     --safe-solid: #1E9A55;
+  }
 
-    .error {
-      background: var(--red-bg); color: var(--red); border-radius: 8px;
-      padding: 10px 14px; margin: 18px 0 0; text-align: center;
-    }
+  [data-theme="dark"] {
+    --bg: #09131F;
+    --bg-tint: #0E1D30;
+    --surface: #101F33;
+    --surface-2: #14263D;
+    --border: #213650;
+    --border-strong: #35506F;
 
-    /* النتائج */
-    .result { margin-top: 36px; }
-    .verdict {
-      border-radius: 14px; padding: 16px 20px; border: 2px solid; text-align: center;
-    }
-    .verdict h2 { margin: 0 0 4px; font-size: 1.4rem; }
-    .verdict p { margin: 0; }
-    .verdict.danger  { background: var(--red-bg);   border-color: var(--red);   color: var(--red); }
-    .verdict.caution { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
-    .verdict.safe    { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+    --text: #E8F0FA;
+    --text-soft: #AFC0D4;
+    --text-faint: #8296AD;
 
-    .meta { color: var(--muted); font-size: .95rem; margin: 14px 4px 0; }
-    .cards { display: grid; gap: 12px; margin-top: 16px; }
-    .finding {
-      background: var(--card); border-radius: 10px; padding: 12px 16px;
-      border-inline-start: 8px solid;
-    }
-    .finding h3 { margin: 0 0 2px; font-size: 1.05rem; }
-    .finding .tag { font-weight: 700; margin-inline-end: 8px; }
-    .finding p { margin: 0; }
-    .finding.major    { border-color: var(--red); }
-    .finding.major .tag    { color: var(--red); }
-    .finding.moderate { border-color: var(--amber); }
-    .finding.moderate .tag { color: var(--amber); }
-    .finding.minor    { border-color: var(--green); }
-    .finding.minor .tag    { color: var(--green); }
+    --primary: #5B9CF0;
+    --primary-hover: #7DB2F6;
+    --primary-soft: #14304F;
+    --on-primary: #06121F;
+    --accent: #6AA8F5;
 
-    .notice { text-align: center; color: var(--muted); font-size: .9rem; margin-top: 40px; }
+    --focus: #8DBCFA;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -8px rgba(0, 0, 0, .55);
+    --shadow-lg: 0 2px 4px rgba(0, 0, 0, .4), 0 18px 40px -12px rgba(0, 0, 0, .65);
 
-    @media (max-width: 520px) {
-      .topbar { padding: 12px 16px; }
-      .options { flex-direction: column; align-items: stretch; }
-      .check { padding-top: 0; }
+    --major-bg: #3A1419;    --major-fg: #FFB7B7;    --major-bd: #7A2A33;    --major-solid: #FF6B6B;
+    --moderate-bg: #392909; --moderate-fg: #FFD28A; --moderate-bd: #7A5718; --moderate-solid: #FFB020;
+    --minor-bg: #11284A;    --minor-fg: #AACCFF;    --minor-bd: #2A4F86;    --minor-solid: #6AA8F5;
+    --safe-bg: #0E3222;     --safe-fg: #92E3B3;     --safe-bd: #1E6847;     --safe-solid: #4CD08A;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: var(--font);
+    font-size: var(--fs-md);
+    line-height: 1.8;
+    color: var(--text);
+    background: radial-gradient(900px 420px at 85% -80px, var(--bg-tint), transparent 70%), var(--bg);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  h1, h2, h3 { line-height: 1.35; margin: 0; font-weight: 600; }
+  p { margin: 0; }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { color: var(--primary-hover); }
+  ul { margin: 0; padding: 0; list-style: none; }
+
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: var(--r-sm); }
+
+  .container { width: min(100% - 2rem, var(--maxw)); margin-inline: auto; }
+
+  /* نافذة الترحيب التي تظهر عند فتح الموقع */
+  .welcome-modal-overlay {
+    position: fixed; inset: 0; background: rgba(9, 19, 31, 0.75);
+    backdrop-filter: blur(8px); z-index: 100; display: grid; place-items: center;
+    padding: 1rem; opacity: 0; pointer-events: none; transition: opacity .3s ease;
+  }
+  .welcome-modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .welcome-modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-lg); max-width: 550px; width: 100%;
+    padding: 2rem; box-shadow: var(--shadow-lg); text-align: center;
+    animation: modal-pop .3s var(--ease);
+  }
+  @keyframes modal-pop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .welcome-modal h2 { color: var(--primary); font-size: var(--fs-xl); margin-bottom: 1rem; }
+  .welcome-modal p { color: var(--text-soft); font-size: var(--fs-sm); margin-bottom: 1.5rem; line-height: 1.7; }
+  .welcome-logo { width: 130px; height: 130px; border-radius: 24px; display: block; margin: 0 auto 1.25rem; box-shadow: var(--shadow); }
+
+  /* الأزرار */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    font: inherit; font-weight: 500; font-size: var(--fs-sm);
+    min-height: 44px; padding: .55rem 1.1rem; border-radius: var(--r-pill);
+    border: 1.5px solid transparent; cursor: pointer; text-decoration: none;
+    transition: background-color .15s, transform .15s var(--ease);
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--primary); color: var(--on-primary); }
+  .btn-primary:hover { background: var(--primary-hover); color: var(--on-primary); }
+  .btn-ghost { background: transparent; color: var(--text); border-color: var(--border-strong); }
+  .btn-ghost:hover { background: var(--primary-soft); border-color: var(--primary); }
+  .btn-lg { min-height: 54px; font-size: var(--fs-md); padding-inline: 2rem; width: 100%; }
+
+  .icon-btn {
+    width: 44px; height: 44px; padding: 0; border-radius: 50%;
+    display: inline-grid; place-items: center; background: var(--surface); color: var(--text);
+    border: 1.5px solid var(--border); cursor: pointer; transition: all .15s;
+  }
+  .icon-btn:hover { border-color: var(--primary); background: var(--primary-soft); }
+  .icon-btn svg { width: 20px; height: 20px; }
+  .icon-btn .i-sun { display: none; }
+  [data-theme="dark"] .icon-btn .i-sun { display: block; }
+  [data-theme="dark"] .icon-btn .i-moon { display: none; }
+
+  /* الهيدر */
+  .site-header {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+  }
+  .site-header .container {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 68px;
+  }
+  .brand { display: inline-flex; align-items: center; gap: .65rem; color: var(--text); }
+  .brand-logo { width: 46px; height: 46px; border-radius: 12px; object-fit: cover; flex: none; display: block; }
+  .brand b { font-weight: 600; font-size: var(--fs-lg); }
+  .nav { display: flex; align-items: center; gap: .6rem; }
+
+  main { padding-block: 2.5rem 3rem; }
+
+  .hero { text-align: center; margin-bottom: 2rem; }
+  .hero h1 { font-size: var(--fs-2xl); font-weight: 700; color: var(--primary); }
+  .hero p { margin-top: .7rem; color: var(--text-soft); max-width: 52ch; margin-inline: auto; font-size: var(--fs-md); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-lg); box-shadow: var(--shadow);
+    padding: clamp(1.1rem, 3vw, 1.75rem);
+  }
+
+  .field { margin-top: 1.25rem; }
+  .field:first-child { margin-top: 0; }
+  .field > label, .label {
+    display: block; font-weight: 500; font-size: var(--fs-sm); margin-bottom: .4rem; color: var(--text);
+  }
+  .hint { font-size: var(--fs-xs); color: var(--text-faint); margin-top: .4rem; }
+
+  /* العمر: رقم + وحدة (يوم / شهر / سنة) */
+  .age-row { display: flex; gap: .5rem; }
+  .age-row .input { flex: 1 1 0; min-width: 0; }
+  .age-row select { flex: 0 0 auto; width: auto; min-width: 96px; }
+
+  .inputs-row {
+    display: grid; grid-template-columns: 1.7fr 1.5fr 1fr; gap: 1rem; align-items: flex-end; margin-top: 1.25rem;
+  }
+
+  .input, select {
+    width: 100%; font: inherit; color: var(--text); background: var(--surface-2);
+    border: 1.5px solid var(--border); border-radius: var(--r-md); min-height: 48px; padding: .5rem 1rem;
+    transition: border-color .15s, box-shadow .15s, background-color .15s;
+  }
+  .input:hover, select:hover { border-color: var(--border-strong); }
+  .input:focus, select:focus {
+    outline: none; border-color: var(--primary);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent);
+    background: var(--surface);
+  }
+  select {
+    appearance: none; cursor: pointer; padding-inline-end: 2.6rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238296AD' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: left 1rem center;
+  }
+
+  /* حقل الأدوية الكبسولي */
+  .chipbox {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+    background: var(--surface-2); border: 2px solid var(--border); border-radius: var(--r-lg);
+    padding: .65rem .75rem; min-height: 64px; cursor: text; transition: all .15s;
+  }
+  .chipbox:focus-within { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent); }
+  #chips { display: contents; }
+  .chipbox input {
+    flex: 1 1 140px; min-width: 120px; min-height: 40px; border: 0; background: transparent;
+    font: inherit; font-size: var(--fs-md); color: var(--text); padding: 0 .4rem;
+  }
+  .chipbox input:focus { outline: none; }
+  .chip {
+    display: inline-flex; align-items: stretch; border-radius: var(--r-pill); overflow: hidden;
+    border: 1.5px solid var(--primary); background: var(--surface); color: var(--text); font-size: var(--fs-sm); font-weight: 500;
+  }
+  .chip-name { padding: .3rem .9rem .3rem .7rem; display: inline-flex; align-items: center; }
+  .chip button {
+    border: 0; cursor: pointer; font: inherit; background: var(--primary); color: var(--on-primary);
+    width: 38px; min-height: 36px; font-size: 1.15rem; transition: background .15s;
+  }
+  .chip button:hover { background: var(--primary-hover); }
+
+  /* قائمة اقتراحات الأدوية (بديل datalist لتظهر بنفس الشكل على الهاتف والكمبيوتر) */
+  .chip-wrap { position: relative; }
+  .suggest-box {
+    position: absolute; top: calc(100% + 6px); right: 0; left: 0; z-index: 60;
+    margin: 0; padding: .4rem; list-style: none;
+    background: var(--surface); border: 1.5px solid var(--border-strong); border-radius: var(--r-md);
+    box-shadow: var(--shadow-lg); max-height: 240px; overflow-y: auto;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    animation: drop-in .2s var(--ease);
+  }
+  .suggest-box[hidden] { display: none; }
+  .suggest-box li {
+    min-height: 44px; display: flex; align-items: center; padding: .4rem .8rem;
+    border-radius: var(--r-sm); cursor: pointer; font-size: var(--fs-sm); color: var(--text);
+  }
+  .suggest-box li:hover, .suggest-box li.active { background: var(--primary-soft); color: var(--primary); }
+
+  /* نظام المنسدلة للأمراض المصاحبة بدون تخريب التصميم */
+  .custom-dropdown-wrapper { position: relative; width: 100%; }
+  .dropdown-toggle-btn {
+    width: 100%; min-height: 48px; background: var(--surface-2); border: 1.5px solid var(--border);
+    border-radius: var(--r-md); padding: .5rem 1rem; display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; font: inherit; color: var(--text); font-size: var(--fs-sm); transition: border-color .15s;
+  }
+  .dropdown-toggle-btn:hover { border-color: var(--border-strong); }
+  .dropdown-content-box {
+    position: absolute; top: calc(100% + 6px); right: 0; left: 0; z-index: 50;
+    background: var(--surface); border: 1.5px solid var(--border-strong); border-radius: var(--r-md);
+    box-shadow: var(--shadow-lg); max-height: 250px; overflow-y: auto; padding: 0.75rem;
+    display: none; animation: drop-in .2s var(--ease);
+  }
+  .custom-dropdown-wrapper.open .dropdown-content-box { display: block; }
+  @keyframes drop-in { from { transform: translateY(-5px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .check-grid { display: grid; grid-template-columns: 1fr; gap: .4rem; }
+  .check {
+    display: flex; align-items: center; gap: .6rem; cursor: pointer; padding: .45rem .6rem;
+    border-radius: var(--r-sm); background: var(--surface-2); font-size: var(--fs-sm); transition: background .15s;
+  }
+  .check:hover { background: var(--primary-soft); }
+  .check input { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+
+  /* مفتاح الحمل */
+  .switch {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: .8rem 1rem; min-height: 48px; background: var(--surface-2); border: 1.5px solid var(--border);
+    border-radius: var(--r-md); cursor: pointer; transition: all .15s;
+  }
+  .switch:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); }
+  .switch .switch-text { font-weight: 500; font-size: var(--fs-sm); }
+  .switch input {
+    appearance: none; width: 44px; height: 24px; border-radius: var(--r-pill);
+    background: var(--border-strong); position: relative; cursor: pointer; transition: background .2s;
+  }
+  .switch input::after {
+    content: ""; position: absolute; top: 2px; right: 2px; width: 20px; height: 20px;
+    border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: right .2s var(--ease);
+  }
+  .switch input:checked { background: var(--primary); }
+  .switch input:checked::after { right: 22px; }
+
+  .form-actions { margin-top: 1.75rem; }
+
+  /* النتائج ودرجات الخطورة الملونة بدقة */
+  .result { margin-top: 2rem; display: grid; gap: 1rem; scroll-margin-top: 90px; }
+
+  .verdict-box {
+    border-radius: var(--r-lg); padding: clamp(1.1rem, 3vw, 1.75rem);
+    border: 2px solid; display: flex; gap: 1rem; align-items: flex-start;
+  }
+  .verdict-box.major    { background: var(--major-bg);    border-color: var(--major-bd);    color: var(--major-fg); }
+  .verdict-box.moderate { background: var(--moderate-bg); border-color: var(--moderate-bd); color: var(--moderate-fg); }
+  .verdict-box.minor    { background: var(--minor-bg);    border-color: var(--minor-bd);    color: var(--minor-fg); }
+  .verdict-box.safe, .verdict-box.none { background: var(--safe-bg); border-color: var(--safe-bd); color: var(--safe-fg); }
+
+  .verdict-icon {
+    flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 1.6rem; font-weight: 700; color: #fff;
+  }
+  .verdict-box.major    .verdict-icon { background: var(--major-solid); border-radius: 14px; }
+  .verdict-box.moderate .verdict-icon { background: var(--moderate-solid); }
+  .verdict-box.minor    .verdict-icon { background: var(--minor-solid); }
+  .verdict-box.safe .verdict-icon, .verdict-box.none .verdict-icon { background: var(--safe-solid); }
+
+  .verdict-box.major    .verdict-icon::before { content: "!"; }
+  .verdict-box.moderate .verdict-icon::before { content: "!"; }
+  .verdict-box.minor    .verdict-icon::before { content: "i"; }
+  .verdict-box.safe .verdict-icon::before, .verdict-box.none .verdict-icon::before { content: "✓"; }
+
+  /* مستويات المحرك في التطبيق: danger / caution / safe */
+  .verdict-box.danger  { background: var(--major-bg);    border-color: var(--major-bd);    color: var(--major-fg); }
+  .verdict-box.caution { background: var(--moderate-bg); border-color: var(--moderate-bd); color: var(--moderate-fg); }
+  .verdict-box.danger  .verdict-icon { background: var(--major-solid); border-radius: 14px; }
+  .verdict-box.caution .verdict-icon { background: var(--moderate-solid); }
+  .verdict-box.danger  .verdict-icon::before,
+  .verdict-box.caution .verdict-icon::before { content: "!"; }
+
+  .verdict { font-size: var(--fs-xl); font-weight: 700; color: inherit; }
+  .verdict-box p { margin-top: .35rem; color: var(--text); }
+
+  /* تفاصيل البطاقات الفردية للتداخلات بالألوان الصحيحة */
+  .finding {
+    background: var(--surface); border: 1px solid var(--border);
+    border-right: 6px solid var(--minor-solid); border-radius: var(--r-md); padding: 1.1rem 1.25rem; box-shadow: var(--shadow);
+  }
+  .finding.major    { border-right-color: var(--major-solid); }
+  .finding.moderate { border-right-color: var(--moderate-solid); }
+  .finding.minor    { border-right-color: var(--minor-solid); }
+  .finding.safe     { border-right-color: var(--safe-solid); }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: .35rem; font-size: var(--fs-xs); font-weight: 600; padding: .1rem .7rem; min-height: 26px; border-radius: var(--r-pill);
+    background: var(--minor-bg); color: var(--minor-fg); border: 1px solid var(--minor-bd);
+  }
+  .finding.major    .badge { background: var(--major-bg);    color: var(--major-fg);    border-color: var(--major-bd); }
+  .finding.moderate .badge { background: var(--moderate-bg); color: var(--moderate-fg); border-color: var(--moderate-bd); }
+  .finding.safe     .badge { background: var(--safe-bg);     color: var(--safe-fg);     border-color: var(--safe-bd); }
+
+  /* بطاقات النتيجة الإضافية: الفئة العمرية والجرعات */
+  .card-title { font-size: var(--fs-sm); color: var(--text-soft); margin-bottom: .6rem; font-weight: 500; }
+  .pill { display: inline-block; background: var(--primary-soft); padding: .25rem .85rem; border-radius: var(--r-pill); font-size: var(--fs-sm); }
+  .dosing-list li { padding: .7rem 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); color: var(--text-soft); }
+  .dosing-list li:first-child { border-top: 0; padding-top: 0; }
+  .dosing-list strong { color: var(--text); font-weight: 600; }
+  .dosing-form { color: var(--text-faint); font-size: var(--fs-xs); }
+  .alert-warn {
+    padding: .9rem 1.1rem; border-radius: var(--r-md); font-size: var(--fs-sm);
+    background: var(--moderate-bg); color: var(--moderate-fg); border: 1.5px solid var(--moderate-bd);
+  }
+  .save-note { font-size: var(--fs-sm); color: var(--text-soft); text-align: center; }
+
+  /* بطاقة بيانات الدواء الواحد */
+  .drug-title { font-size: var(--fs-lg); font-weight: 600; color: var(--primary); }
+  .drug-title span { font-size: var(--fs-sm); font-weight: 400; color: var(--text-soft); }
+  .drug-facts { margin-top: .6rem; display: grid; gap: .35rem; font-size: var(--fs-sm); color: var(--text-soft); }
+  .drug-facts b { color: var(--text); font-weight: 600; }
+  .drug-sub { font-size: var(--fs-sm); font-weight: 600; color: var(--text); margin: 1.1rem 0 .4rem; }
+  .drug-list li { padding: .7rem 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); color: var(--text-soft); }
+  .drug-list li:first-child { border-top: 0; padding-top: 0; }
+  .drug-list strong { color: var(--text); font-weight: 600; }
+  .drug-list .badge { margin-inline-end: .5rem; }
+  .drug-list .sev-major    { background: var(--major-bg);    color: var(--major-fg);    border-color: var(--major-bd); }
+  .drug-list .sev-moderate { background: var(--moderate-bg); color: var(--moderate-fg); border-color: var(--moderate-bd); }
+
+  /* بطاقات التعريف المسبق بأنواع التداخلات */
+  .definitions-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 2.5rem;
+  }
+  .def-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 1.2rem;
+    border-right: 4px solid var(--primary); box-shadow: var(--shadow);
+  }
+  .def-card.major-def { border-right-color: var(--major-solid); }
+  .def-card.moderate-def { border-right-color: var(--moderate-solid); }
+  .def-card.safe-def { border-right-color: var(--safe-solid); }
+  .def-card h4 { font-size: var(--fs-md); margin-bottom: .4rem; display: flex; align-items: center; gap: .5rem; }
+  .def-card p { font-size: var(--fs-xs); color: var(--text-soft); }
+
+  /* الأقسام الأخرى والفوتر */
+  .info-sections { margin-top: 3.5rem; display: grid; gap: 2rem; }
+  .content-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+  .info-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1.5rem; box-shadow: var(--shadow); }
+  .info-card h3 { color: var(--primary); font-size: var(--fs-lg); margin-bottom: .75rem; display: flex; align-items: center; gap: .5rem; }
+  .info-card p, .info-card ul { color: var(--text-soft); font-size: var(--fs-sm); }
+  
+  /* الأقسام الجديدة: من نحن / الأهداف / خطوات الفحص */
+  .info-sections [id] { scroll-margin-top: 90px; }
+  .eyebrow { font-size: var(--fs-xs); font-weight: 600; color: var(--accent); letter-spacing: .02em; margin-bottom: .35rem; }
+  .section-title { font-size: var(--fs-xl); font-weight: 700; color: var(--text); }
+  .about-card .lead { margin-top: .85rem; font-size: var(--fs-md); line-height: 1.9; color: var(--text-soft); }
+  .section-head { text-align: center; margin-bottom: 1.5rem; }
+
+  .goals-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .9rem; margin-top: .5rem; }
+  .goals-list li {
+    display: flex; align-items: flex-start; gap: .65rem; padding: .85rem 1rem;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md);
+    color: var(--text-soft); font-size: var(--fs-sm);
+  }
+  .goals-list li i { color: var(--safe-solid); margin-top: .35rem; flex: none; }
+
+  /* القوائم المنسدلة: الرؤية والرسالة وأهداف الموقع */
+  .accordion { display: grid; gap: .9rem; }
+  .acc { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow); overflow: hidden; }
+  .acc summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    min-height: 60px; padding: .9rem 1.25rem; cursor: pointer; list-style: none;
+    font-weight: 600; font-size: var(--fs-lg); color: var(--primary); transition: background-color .15s;
+  }
+  .acc summary::-webkit-details-marker { display: none; }
+  .acc summary:hover { background: var(--primary-soft); }
+  .acc-title { display: inline-flex; align-items: center; gap: .6rem; }
+  .acc-chevron { font-size: .85rem; color: var(--text-soft); transition: transform .25s var(--ease); }
+  .acc[open] .acc-chevron { transform: rotate(180deg); }
+  .acc[open] summary { border-bottom: 1px solid var(--border); }
+  .acc-body { padding: 1.1rem 1.25rem 1.25rem; color: var(--text-soft); font-size: var(--fs-sm); animation: drop-in .2s var(--ease); }
+
+  .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1.25rem; counter-reset: none; }
+  .step-card {
+    position: relative; text-align: center; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 2rem 1.25rem 1.5rem;
+  }
+  .step-num {
+    position: absolute; top: -14px; right: 50%; transform: translateX(50%);
+    width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--primary); color: var(--on-primary); font-weight: 700; font-size: var(--fs-sm);
+    border: 3px solid var(--bg);
+  }
+  .step-icon {
+    width: 60px; height: 60px; margin: 0 auto .9rem; border-radius: 18px; display: grid; place-items: center;
+    background: var(--primary-soft); color: var(--primary); font-size: 1.5rem;
+  }
+  .step-card h3 { font-size: var(--fs-lg); margin-bottom: .4rem; }
+  .step-card p { color: var(--text-soft); font-size: var(--fs-sm); }
+
+  .nav-link { color: var(--text-soft); font-size: var(--fs-sm); font-weight: 500; padding: .5rem .8rem; border-radius: var(--r-pill); transition: background-color .15s, color .15s; }
+  .nav-link:hover { background: var(--primary-soft); color: var(--primary); }
+  @media (max-width: 768px) { .nav-link { display: none; } }
+
+  .site-footer { margin-top: 4rem; background: var(--surface); border-top: 1px solid var(--border); padding: 2.5rem 0 1.5rem; }
+  .footer-content { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; text-align: center; }
+  .footer-content .brand-logo { width: 56px; height: 56px; border-radius: 14px; }
+  .social-icons { display: flex; gap: 1rem; }
+  .social-icon-btn {
+    width: 40px; height: 40px; border-radius: 50%; display: inline-grid; place-items: center;
+    background: var(--primary-soft); color: var(--primary); border: 1px solid var(--border-strong); transition: all .2s;
+  }
+  .social-icon-btn:hover { background: var(--primary); color: #fff; transform: translateY(-2px); }
+  .footer-copy { font-size: var(--fs-xs); color: var(--text-faint); border-top: 1px solid var(--border); width: 100%; padding-top: 1.5rem; }
+
+  .alert-error {
+    margin-top: 1.25rem; padding: .9rem 1.1rem; border-radius: var(--r-md);
+    background: var(--major-bg); color: var(--major-fg); border: 1.5px solid var(--major-bd); font-weight: 500; display: flex; gap: .6rem;
+  }
+  .disclaimer { margin-top: 2rem; padding: 1rem; font-size: var(--fs-sm); color: var(--text-soft); background: var(--surface); border: 1px dashed var(--border-strong); text-align: center; border-radius: var(--r-md); }
+
+  @media (max-width: 768px) {
+    .inputs-row { grid-template-columns: 1fr; gap: 1.25rem; }
+
+    /* تصغير أزرار الهيدر في الهاتف حتى لا يظهر زر الدخول كبيراً ودائرياً */
+    .site-header .container { min-height: 60px; gap: .5rem; }
+    .nav { gap: .4rem; }
+    .nav .btn {
+      min-height: 36px; padding: .2rem .85rem; font-size: var(--fs-xs);
+      border-radius: var(--r-md); white-space: nowrap; width: auto; flex: none;
     }
+    .nav .icon-btn { width: 36px; height: 36px; }
+    .nav .icon-btn svg { width: 18px; height: 18px; }
+    .brand-logo { width: 38px; height: 38px; border-radius: 10px; }
+    .brand b { font-size: var(--fs-md); }
+  }
   </style>
 </head>
 <body>
 
-  <header class="topbar">
-    <a class="brand" href="{{ url_for('index') }}">الصيدلاني الخبير</a>
-    <nav class="nav">
-      {% if session.get('user_id') %}
-        <a href="{{ url_for('dashboard') }}">حسابي</a>
-        <a href="{{ url_for('logout') }}">تسجيل الخروج</a>
-      {% else %}
-        <a href="{{ url_for('login') }}">تسجيل الدخول</a>
-      {% endif %}
-    </nav>
+  <!-- نافذة ترحيبية تظهر عند فتح الموقع (مرة واحدة في كل جلسة) -->
+  <div class="welcome-modal-overlay" id="welcome-modal">
+    <div class="welcome-modal">
+      <img class="welcome-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="DrugWise">
+      <h2><i class="fa-solid fa-pills"></i> أهلاً بك في نظام تداخل الأدوية</h2>
+      <p>منصة ذكية متكاملة تم تصميمه خصيصاً لدعم الصيادلة والمرضى في الكشف اللحظي عن التداخلات الدوائية الخطيرة، لضمان أعلى معايير الأمان والسلامة الدوائية.</p>
+      <button type="button" class="btn btn-primary" id="close-modal-btn">ابدأ الآن</button>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="{{ url_for('index') }}">
+        <img class="brand-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="DrugWise">
+        <b>تداخل الأدوية</b>
+      </a>
+
+      <nav class="nav" aria-label="التنقل الرئيسي">
+        <a class="nav-link" href="#steps">خطوات الفحص</a>
+        <a class="nav-link" href="#about">من نحن</a>
+        {% if session.get('user_id') %}
+          <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">حسابي</a>
+          <a class="btn btn-ghost" href="{{ url_for('logout') }}">تسجيل الخروج</a>
+        {% else %}
+          <a class="btn btn-primary" href="{{ url_for('login') }}">تسجيل الدخول</a>
+        {% endif %}
+
+        <button type="button" class="icon-btn" id="theme-toggle" aria-label="تبديل الوضع الليلي">
+          <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+          <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+      </nav>
+    </div>
   </header>
 
   <main>
-    <h1>تداخل الأدوية</h1>
+    <div class="container">
 
-    <form method="POST" id="check-form" action="{{ url_for('index') }}">
-      <div class="drugs-box" id="drugs-box">
-        <span id="chips"></span>
-        <input type="text" id="drug-input" list="known-drugs" autocomplete="off"
-               aria-label="اسم الدواء" placeholder="اكتبي اسم الدواء ثم اضغطي Enter">
-      </div>
-      <datalist id="known-drugs">
-        {% for n in known %}<option value="{{ n }}">{% endfor %}
-      </datalist>
-      <input type="hidden" name="drugs" id="drugs-hidden">
-      <p class="hint">أضيفي دواءين أو أكثر، بالاسم العلمي أو التجاري.</p>
+      <section class="hero">
+        <h1>افحص التداخل</h1>
+        <p>أضف الأدوية التي تتناولها، وسنفحص التداخلات المحتملة بينها    .</p>
+      </section>
 
-      <div class="options">
+      <form method="POST" id="check-form" action="{{ url_for('index') }}" class="card">
+
         <div class="field">
-          <label for="age">العمر</label>
-          <select name="age" id="age">
-            <option value="">غير محدد</option>
-            {% for a in range(1, 101) %}
-              <option value="{{ a }}" {% if form.age == a %}selected{% endif %}>{{ a }}</option>
-            {% endfor %}
-          </select>
+          <label for="drug-input">الأدوية</label>
+          <div class="chip-wrap">
+            <div class="chipbox" id="chipbox">
+              <div id="chips"></div>
+              <input type="text" id="drug-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="drug-suggest" placeholder="اكتب اسم الدواء ثم اضغط Enter">
+            </div>
+            <ul class="suggest-box" id="drug-suggest" role="listbox" hidden></ul>
+          </div>
+          <datalist id="known-drugs">
+            {% for n in known %}<option value="{{ n }}">{% endfor %}
+          </datalist>
+          <input type="hidden" name="drugs" id="drugs-hidden">
+          <p class="hint">أضف دواءً واحداً لمعرفة بياناته، أو دواءين أو أكثر لفحص التداخل بينها. اضغط Enter أو الفاصلة بعد كل دواء.</p>
         </div>
 
-        <div class="field">
-          <span class="label" id="cond-label">أمراض مصاحبة</span>
-          <details id="cond-dd">
-            <summary aria-labelledby="cond-label"><span id="cond-count">لا يوجد</span></summary>
-            <div class="dd-list">
-              {% for c in conditions %}
-                <label>
-                  <input type="checkbox" name="conditions" value="{{ c.id }}"
-                         {% if c.id in form.conditions %}checked{% endif %}>
-                  {{ c.condition_name }}
-                </label>
+        {% if session.get('role') == 'pharmacist' %}
+        <div class="grid-2" style="margin-top: 1.25rem; display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+          <div class="field">
+            <label for="patient_name">اسم المريض (اختياري)</label>
+            <input class="input" type="text" id="patient_name" name="patient_name" maxlength="150" value="{{ form.patient_name or '' }}" placeholder="مثال: محمد أحمد">
+          </div>
+          <div class="field">
+            <label for="gender">الجنس</label>
+            <select name="gender" id="gender">
+              <option value="">غير محدد</option>
+              <option value="ذكر" {% if form.gender == 'ذكر' %}selected{% endif %}>ذكر</option>
+              <option value="أنثى" {% if form.gender == 'أنثى' %}selected{% endif %}>أنثى</option>
+            </select>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="inputs-row">
+          <div class="field" style="margin-top:0;">
+            <label for="age">العمر</label>
+            <div class="age-row">
+              <input class="input" type="number" name="age" id="age" min="0" max="43830"
+                     inputmode="numeric" placeholder="غير محدد"
+                     value="{{ form.age if form.age is not none else '' }}">
+              <select name="age_unit" id="age_unit" aria-label="وحدة العمر">
+                {% for key, label in (AGE_UNITS if AGE_UNITS is defined else {'day': 'يوم', 'month': 'شهر', 'year': 'سنة'}).items() %}
+                  <option value="{{ key }}" {% if (form.age_unit or 'year') == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- قائمة منسدلة أنيقة للأمراض المصاحبة تتطاير فوق المحتوى دون تخريب التنسيق -->
+          <div class="field" style="margin-top:0;">
+            <label>أمراض مصاحبة</label>
+            <div class="custom-dropdown-wrapper" id="conditions-dropdown">
+              <button type="button" class="dropdown-toggle-btn" id="dropdown-btn">
+                <span id="dropdown-label">اختر الأمراض المصاحبة</span>
+                <i class="fa-solid fa-chevron-down" style="font-size: .8rem;"></i>
+              </button>
+              <div class="dropdown-content-box">
+                <div class="check-grid">
+                  {% for c in conditions %}
+                    <label class="check">
+                      <input type="checkbox" name="conditions" value="{{ c.id }}" {% if c.id in form.conditions %}checked{% endif %}>
+                      <span>{{ c.condition_name }}</span>
+                    </label>
+                  {% else %}
+                    <span style="color:var(--text-faint); font-size:var(--fs-sm);">لا توجد أمراض متاحة.</span>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:0;">
+            <label class="switch" for="pregnant">
+              <span class="switch-text">حالة حمل</span>
+              <input type="checkbox" name="pregnant" id="pregnant" {% if form.pregnant %}checked{% endif %}>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-lg">فحص التداخل</button>
+        </div>
+
+        {% if error %}
+          <p class="alert-error" role="alert">{{ error }}</p>
+        {% endif %}
+      </form>
+
+      <!-- بطاقات التعريف المسبق بأنواع التداخلات -->
+      <div class="definitions-grid">
+        <div class="def-card major-def">
+          <h4><i class="fa-solid fa-triangle-exclamation" style="color:var(--major-solid);"></i> تداخل خطير (Major)</h4>
+          <p>تداخلات قد تهدد الحياة أو تؤدي لأضرار بالغة، ويجب تجنب الجمع بين الأدوية المعنية تماماً إلا بإشراف طبي دقيق.</p>
+        </div>
+        <div class="def-card moderate-def">
+          <h4><i class="fa-solid fa-circle-exclamation" style="color:var(--moderate-solid);"></i> تداخل متوسط (Moderate)</h4>
+          <p>قد يتطلب الأمر تعديل الجرعات، مراقبة سريرية دقيقة، أو استشارة الصيدلاني لوجود تأثيرات جانبية محتملة.</p>
+        </div>
+        <div class="def-card safe-def">
+          <h4><i class="fa-solid fa-circle-check" style="color:var(--safe-solid);"></i> آمن أو بسيط (Safe/Minor)</h4>
+          <p>تداخلات طفيفة لا تستدعي عادةً أي تغييرات علاجية أو تأثيراتها تكاد تكون معدومة.</p>
+        </div>
+      </div>
+
+      {% if result %}
+        <section class="result" id="result-section" aria-live="polite">
+
+          {% if not result.drug_info %}
+          <div class="verdict-box {{ result.level }}">
+            <span class="verdict-icon"></span>
+            <div>
+              <h2 class="verdict">{{ result.level_title }}</h2>
+              <p>{{ result.message }}</p>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 1rem;">
+            <h3 style="font-size:var(--fs-sm); color:var(--text-soft); margin-bottom:.6rem;">الأدوية المفحوصة</h3>
+            <div style="display:flex; flex-wrap:wrap; gap:.5rem;">
+              {% for m in result.meds %}<span class="pill">{{ m }}</span>{% endfor %}
+            </div>
+            {% if result.age_group %}
+              <h3 class="card-title" style="margin-top:1rem;">الفئة العمرية</h3>
+              <span class="pill">{{ result.age_group }}</span>
+            {% endif %}
+          </div>
+
+          {% endif %}
+
+          {% if result.not_found %}
+            <p class="alert-warn" role="status">غير متوفر حاليًا في بيانات الأدوية لدينا: {{ result.not_found|join('، ') }}</p>
+          {% endif %}
+
+          {% if not result.drug_info %}
+          {% for f in result.findings %}
+            <article class="finding {{ f.severity }}">
+              <h3 style="display:flex; align-items:center; gap:.7rem; font-size:var(--fs-lg);">
+                <span class="badge">{% if f.severity == 'major' %}خطير{% elif f.severity == 'moderate' %}متوسط{% else %}بسيط{% endif %}</span>
+                {{ f.title }}
+              </h3>
+              <p style="margin-top:.5rem; color:var(--text-soft);">{{ f.text }}</p>
+            </article>
+          {% endfor %}
+
+          {% endif %}
+
+          {% if result.drug_info %}
+            {% set di = result.drug_info %}
+            <div class="card">
+              <h3 class="card-title">بيانات الدواء</h3>
+              <p class="drug-title">{{ di.scientific_name }} <span>({{ di.trade_name }})</span></p>
+              <ul class="drug-facts">
+                {% if di.classification %}<li><b>التصنيف:</b> {{ di.classification }}</li>{% endif %}
+                {% if di.form %}<li><b>الشكل الدوائي:</b> {{ di.form }}</li>{% endif %}
+                {% if di.concentration %}<li><b>التركيز:</b> {{ di.concentration }}</li>{% endif %}
+                {% if di.dosage %}<li><b>الجرعة:</b> {{ di.dosage }}</li>{% endif %}
+              </ul>
+              {% if di.warning %}<p class="alert-warn" style="margin-top:.9rem;">{{ di.warning }}</p>{% endif %}
+
+              <h4 class="drug-sub">يتداخل مع</h4>
+              {% if di.interactions %}
+                <ul class="drug-list">
+                  {% for i in di.interactions %}
+                    <li>
+                      <span class="badge sev-{{ i.severity }}">{{ i.severity_ar }}</span>
+                      <strong>{{ i.name }}</strong> — {{ i.text }}
+                    </li>
+                  {% endfor %}
+                </ul>
               {% else %}
-                <span class="hint">لا توجد أمراض في قاعدة المعرفة بعد.</span>
-              {% endfor %}
+                <p class="hint">لا توجد تداخلات مسجّلة لهذا الدواء في قاعدة المعرفة.</p>
+              {% endif %}
+
+              {% if di.contras %}
+                <h4 class="drug-sub">موانع الاستعمال</h4>
+                <ul class="drug-list">
+                  {% for c in di.contras %}
+                    <li>
+                      <span class="badge sev-{{ c.severity }}">{{ c.severity_ar }}</span>
+                      <strong>{{ c.reason }}</strong> — {{ c.text }}
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+
+              <p class="hint" style="margin-top:1rem;">أضف دواءً آخر لفحص التداخل بينهما مباشرة.</p>
+            </div>
+          {% endif %}
+
+          {% if result.dosing %}
+            <div class="card">
+              <h3 class="card-title">الجرعات المسجلة لفئة «{{ result.age_group }}»</h3>
+              <ul class="dosing-list">
+                {% for d in result.dosing %}
+                  <li>
+                    <strong>{{ d.medication }}</strong>
+                    <span class="dosing-form">({{ d.form }}{% if d.is_default_form %} — النوع الأساسي{% endif %})</span>:
+                    {{ d.text }}{% if d.notes %} — {{ d.notes }}{% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          {% if result.saved %}
+            <p class="save-note">حُفظ هذا الفحص في سجلك.</p>
+          {% elif not session.get('user_id') %}
+            <p class="save-note"><a href="{{ url_for('login') }}">سجّل الدخول</a> لحفظ فحوصاتك والرجوع إليها.</p>
+          {% endif %}
+        </section>
+      {% endif %}
+
+      <div class="info-sections">
+        <!-- الرؤية والرسالة وأهداف الموقع: قوائم منسدلة تُفتح عند الضغط -->
+        <div class="accordion">
+          <details class="acc" id="about">
+            <summary>
+              <span class="acc-title"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> من نحن</span>
+              <i class="fa-solid fa-chevron-down acc-chevron" aria-hidden="true"></i>
+            </summary>
+            <div class="acc-body">
+              <p style="font-weight:600; color:var(--text); margin-bottom:.5rem;">نظام يجعل السلامة الدوائية أوضح وأسهل</p>
+              <p>«تداخل الأدوية» مشروع تقني من كلية الجزيرة التقنية، يساعد المرضى والصيادلة على التعرّف بسرعة على التداخلات المحتملة بين الأدوية، مع مراعاة العمر والأمراض المصاحبة وحالة الحمل، وعرض النتيجة بلغة عربية واضحة ودرجات خطورة مفهومة.</p>
+            </div>
+          </details>
+
+          <details class="acc" id="vision">
+            <summary>
+              <span class="acc-title"><i class="fa-solid fa-eye" aria-hidden="true"></i> رؤيتنا</span>
+              <i class="fa-solid fa-chevron-down acc-chevron" aria-hidden="true"></i>
+            </summary>
+            <div class="acc-body">
+              <p>أن نكون مرجعاً عربياً موثوقاً وسهل الاستخدام في الوعي بالسلامة الدوائية، يصل إليه كل من يتناول دواءً أو يصرفه.</p>
+            </div>
+          </details>
+
+          <details class="acc" id="mission">
+            <summary>
+              <span class="acc-title"><i class="fa-solid fa-bullseye" aria-hidden="true"></i> رسالتنا</span>
+              <i class="fa-solid fa-chevron-down acc-chevron" aria-hidden="true"></i>
+            </summary>
+            <div class="acc-body">
+              <p>تقديم أداة فحص سريعة ودقيقة وواضحة، تدعم القرار الدوائي الآمن وتحدّ من الأخطاء الناتجة عن الجمع غير المناسب بين الأدوية.</p>
+            </div>
+          </details>
+
+          <details class="acc" id="goals">
+            <summary>
+              <span class="acc-title"><i class="fa-solid fa-flag-checkered" aria-hidden="true"></i> أهداف الموقع</span>
+              <i class="fa-solid fa-chevron-down acc-chevron" aria-hidden="true"></i>
+            </summary>
+            <div class="acc-body">
+              <ul class="goals-list">
+                <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>الحد من الأخطاء الدوائية الناتجة عن التداخلات غير المقصودة.</span></li>
+                <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>نشر الوعي بأهمية مراجعة الأدوية قبل تناولها معاً.</span></li>
+                <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>دعم الصيادلة بأداة مساعدة تُسرّع الفحص وتوثّق نتائجه.</span></li>
+                <li><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>تخصيص النتيجة بحسب العمر والأمراض المصاحبة وحالة الحمل.</span></li>
+              </ul>
             </div>
           </details>
         </div>
 
-        <div class="field check">
-          <input type="checkbox" name="pregnant" id="pregnant" {% if form.pregnant %}checked{% endif %}>
-          <label for="pregnant">حالة حمل</label>
-        </div>
+        <!-- خطوات الفحص -->
+        <section id="steps" aria-labelledby="steps-title">
+          <div class="section-head">
+            <p class="eyebrow">كيف يعمل الفحص</p>
+            <h2 id="steps-title" class="section-title">ثلاث خطوات فقط</h2>
+          </div>
+          <ol class="steps-grid">
+            <li class="step-card">
+              <span class="step-num" aria-hidden="true">1</span>
+              <div class="step-icon" aria-hidden="true"><i class="fa-solid fa-pills"></i></div>
+              <h3>أضف أدويتك</h3>
+              <p>اكتب اسم دواء واحد لمعرفة بياناته، أو أكثر من دواء لفحص التداخل بينها، واضغط Enter بعد كل دواء.</p>
+            </li>
+            <li class="step-card">
+              <span class="step-num" aria-hidden="true">2</span>
+              <div class="step-icon" aria-hidden="true"><i class="fa-solid fa-user-doctor"></i></div>
+              <h3>أدخل بياناتك الصحية</h3>
+              <p>حدّد العمر والأمراض المصاحبة وحالة الحمل لتكون النتيجة أدق وأنسب لحالتك.</p>
+            </li>
+            <li class="step-card">
+              <span class="step-num" aria-hidden="true">3</span>
+              <div class="step-icon" aria-hidden="true"><i class="fa-solid fa-clipboard-check"></i></div>
+              <h3>اطّلع على النتيجة</h3>
+              <p>تظهر لك التداخلات مصنّفة إلى خطير ومتوسط وبسيط، مع شرح لكل تداخل.</p>
+            </li>
+          </ol>
+        </section>
       </div>
 
-      <div class="submit-row">
-        <button type="submit" class="primary">فحص التداخل</button>
-      </div>
-    </form>
+      <p class="disclaimer">هذه الأداة مساعدة فقط، ولا تغني عن استشارة الصيدلاني أو الطبيب.</p>
 
-    {% if error %}
-      <div class="error" role="alert">{{ error }}</div>
-    {% endif %}
-
-    {% if result %}
-      <section class="result" aria-live="polite">
-        <div class="verdict {{ result.level }}">
-          <h2>{{ result.level_title }}</h2>
-          <p>{{ result.message }}</p>
-        </div>
-
-        <p class="meta">الأدوية المفحوصة: {{ result.meds|join('، ') }}</p>
-        {% if result.not_found %}
-          <p class="meta">غير موجودة في قاعدة المعرفة: {{ result.not_found|join('، ') }}</p>
-        {% endif %}
-
-        <div class="cards">
-          {% for f in result.findings %}
-            <article class="finding {{ f.severity }}">
-              <h3>
-                <span class="tag">
-                  {% if f.severity == 'major' %}خطير{% elif f.severity == 'moderate' %}متوسط{% else %}بسيط{% endif %}
-                </span>{{ f.title }}
-              </h3>
-              <p>{{ f.text }}</p>
-            </article>
-          {% endfor %}
-        </div>
-
-        {% if result.saved %}
-          <p class="meta">حُفظ هذا الفحص في سجلك.</p>
-        {% elif not session.get('user_id') %}
-          <p class="meta"><a href="{{ url_for('login') }}">سجّلي الدخول</a> لحفظ فحوصاتك والرجوع إليها.</p>
-        {% endif %}
-      </section>
-    {% endif %}
-
-    <p class="notice">هذه الأداة مساعدة فقط، ولا تغني عن استشارة الصيدلاني أو الطبيب.</p>
+    </div>
   </main>
 
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <div class="brand">
+        <img class="brand-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="DrugWise">
+        <b>تداخل الأدوية</b>
+      </div>
+      <div class="social-icons">
+        <a href="#" class="social-icon-btn" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in" aria-hidden="true"></i></a>
+        <a href="#" class="social-icon-btn" aria-label="Facebook"><i class="fa-brands fa-facebook-f" aria-hidden="true"></i></a>
+        <a href="#" class="social-icon-btn" aria-label="Telegram"><i class="fa-brands fa-telegram" aria-hidden="true"></i></a>
+        <a href="#" class="social-icon-btn" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i></a>
+      </div>
+      <div class="footer-copy">جميع الحقوق محفوظة © 2026 - مشروع نظام الأدوية الخبير | كلية الجزيرة التقنية</div>
+    </div>
+  </footer>
+
   <script>
+    /* نافذة الترحيب*/
+    (function() {
+      var modal = document.getElementById('welcome-modal');
+      var closeBtn = document.getElementById('close-modal-btn');
+      var afterSubmit = {{ 'true' if request.method == 'POST' else 'false' }};
+      var seen = false;
+      try { seen = sessionStorage.getItem('welcomeShown') === '1'; } catch (e) {}
+      if (!afterSubmit && !seen) {
+        modal.classList.add('active');
+        try { sessionStorage.setItem('welcomeShown', '1'); } catch (e) {}
+      }
+      closeBtn.addEventListener('click', function() {
+        modal.classList.remove('active');
+      });
+    })();
+
+    /* فتح القائمة المنسدلة تلقائياً عند الانتقال إليها من رابط (مثل "من نحن" في القائمة العلوية) */
+    (function() {
+      function openFromHash() {
+        var id = location.hash.slice(1);
+        if (!id) return;
+        var el = document.getElementById(id);
+        if (el && el.tagName === 'DETAILS') {
+          el.open = true;
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+      window.addEventListener('hashchange', openFromHash);
+      document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+        a.addEventListener('click', function() { setTimeout(openFromHash, 0); });
+      });
+      openFromHash();
+    })();
+
+    /* التمرير التلقائي للنتيجة عند ظهورها */
+    window.addEventListener('DOMContentLoaded', function() {
+      var res = document.getElementById('result-section');
+      if (res) {
+        res.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+
+    /* تبديل قائمة الأمراض المنسدلة العائمة بأمان */
+    (function() {
+      var dropdown = document.getElementById('conditions-dropdown');
+      var btn = document.getElementById('dropdown-btn');
+      var label = document.getElementById('dropdown-label');
+      var checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+      });
+
+      document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target)) {
+          dropdown.classList.remove('open');
+        }
+      });
+
+      function updateLabel() {
+        var checkedCount = 0;
+        checkboxes.forEach(function(cb) { if (cb.checked) checkedCount++; });
+        if (checkedCount === 0) {
+          label.textContent = 'اختر الأمراض المصاحبة';
+        } else {
+          label.textContent = 'تم اختيار (' + checkedCount + ') أمراض';
+        }
+      }
+
+      checkboxes.forEach(function(cb) {
+        cb.addEventListener('change', updateLabel);
+      });
+      updateLabel();
+    })();
+
+    /* الوضع الليلي */
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById('theme-toggle');
+      btn.addEventListener('click', function () {
+        var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch (e) {}
+      });
+    })();
+
+    /* إدارة شرائح الأدوية */
     (function () {
       var chips = {{ form.drugs|tojson }};
       var chipsEl = document.getElementById('chips');
@@ -252,16 +943,18 @@
       function render() {
         chipsEl.innerHTML = '';
         chips.forEach(function (name, i) {
-          var chip = document.createElement('span');
-          chip.className = 'chip';
-          chip.textContent = name;
+          var item = document.createElement('span');
+          item.className = 'chip';
+          var spanName = document.createElement('span');
+          spanName.className = 'chip-name';
+          spanName.textContent = name;
           var btn = document.createElement('button');
           btn.type = 'button';
-          btn.setAttribute('aria-label', 'حذف ' + name);
           btn.textContent = '×';
           btn.onclick = function () { chips.splice(i, 1); render(); input.focus(); };
-          chip.appendChild(btn);
-          chipsEl.appendChild(chip);
+          item.appendChild(spanName);
+          item.appendChild(btn);
+          chipsEl.appendChild(item);
         });
         hidden.value = chips.join('|');
       }
@@ -274,31 +967,103 @@
         render();
       }
 
+      /* قائمة اقتراحات الأدوية: نفس الشكل على الهاتف والكمبيوتر */
+      var suggestEl = document.getElementById('drug-suggest');
+      var wrapEl = suggestEl.parentNode;
+      var known = Array.prototype.map.call(document.querySelectorAll('#known-drugs option'), function (o) { return o.value; });
+      var activeIdx = -1;
+
+      function hideSuggest() {
+        suggestEl.hidden = true;
+        suggestEl.innerHTML = '';
+        activeIdx = -1;
+        input.setAttribute('aria-expanded', 'false');
+      }
+
+      function setActive() {
+        Array.prototype.forEach.call(suggestEl.children, function (li, i) {
+          li.classList.toggle('active', i === activeIdx);
+          if (i === activeIdx) li.scrollIntoView({ block: 'nearest' });
+        });
+      }
+
+      function showSuggest() {
+        var q = input.value.trim().toLowerCase();
+        var taken = chips.map(function (c) { return c.toLowerCase(); });
+        var list = known.filter(function (n) {
+          var l = n.toLowerCase();
+          return taken.indexOf(l) === -1 && (!q || l.indexOf(q) !== -1);
+        }).slice(0, 50);
+        suggestEl.innerHTML = '';
+        activeIdx = -1;
+        if (!list.length) { hideSuggest(); return; }
+        list.forEach(function (n) {
+          var li = document.createElement('li');
+          li.setAttribute('role', 'option');
+          li.textContent = n;
+          /* منع فقدان التركيز على الحقل عند الضغط على اقتراح */
+          li.addEventListener('mousedown', function (e) { e.preventDefault(); });
+          li.addEventListener('click', function () { add(n); hideSuggest(); input.focus(); });
+          suggestEl.appendChild(li);
+        });
+        suggestEl.hidden = false;
+        input.setAttribute('aria-expanded', 'true');
+      }
+
+      input.addEventListener('input', showSuggest);
+      input.addEventListener('focus', showSuggest);
+      document.addEventListener('click', function (e) {
+        if (!wrapEl.contains(e.target)) hideSuggest();
+      });
+
       input.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ',' || e.key === '،') {
+        var items = suggestEl.children;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          if (suggestEl.hidden) showSuggest();
+          items = suggestEl.children;
+          if (!items.length) return;
           e.preventDefault();
-          add(input.value);
+          if (e.key === 'ArrowDown') {
+            activeIdx = (activeIdx + 1) % items.length;
+          } else {
+            activeIdx = activeIdx <= 0 ? items.length - 1 : activeIdx - 1;
+          }
+          setActive();
+        } else if (e.key === 'Escape') {
+          hideSuggest();
+        } else if (e.key === 'Enter' || e.key === ',' || e.key === '،') {
+          e.preventDefault();
+          if (e.key === 'Enter' && activeIdx >= 0 && items[activeIdx]) {
+            add(items[activeIdx].textContent);
+          } else {
+            add(input.value);
+          }
+          hideSuggest();
         } else if (e.key === 'Backspace' && !input.value && chips.length) {
           chips.pop(); render();
         }
       });
-      input.addEventListener('change', function () { add(input.value); });
+      input.addEventListener('change', function () { add(input.value); hideSuggest(); });
       document.getElementById('check-form').addEventListener('submit', function () {
         add(input.value);
       });
-
-      // عدّاد الأمراض المختارة
-      var dd = document.getElementById('cond-dd');
-      var count = document.getElementById('cond-count');
-      function updateCount() {
-        var n = dd.querySelectorAll('input:checked').length;
-        count.textContent = n ? 'المختار: ' + n : 'لا يوجد';
-      }
-      dd.addEventListener('change', updateCount);
-      document.addEventListener('click', function (e) { if (!dd.contains(e.target)) dd.open = false; });
-      updateCount();
-
       render();
+    })();
+  </script>
+
+  <script>
+    /* الحد الأعلى للعمر يتبع الوحدة المختارة (120 سنة = 1440 شهراً = 43830 يوماً) */
+    (function () {
+      var ageIn = document.getElementById('age'), unitSel = document.getElementById('age_unit');
+      if (!ageIn || !unitSel) return;
+      var MAX = { day: 43830, month: 1440, year: 120 };
+      function apply() {
+        var m = MAX[unitSel.value] || 120;
+        ageIn.max = m;
+        ageIn.title = 'من 0 إلى ' + m;
+      }
+      unitSel.addEventListener('change', apply);
+      apply();
     })();
   </script>
 </body>
