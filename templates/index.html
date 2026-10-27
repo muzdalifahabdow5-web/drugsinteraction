@@ -124,7 +124,80 @@
   @keyframes modal-pop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   .welcome-modal h2 { color: var(--primary); font-size: var(--fs-xl); margin-bottom: 1rem; }
   .welcome-modal p { color: var(--text-soft); font-size: var(--fs-sm); margin-bottom: 1.5rem; line-height: 1.7; }
-  .welcome-logo { width: 130px; height: 130px; border-radius: 24px; display: block; margin: 0 auto 1.25rem; box-shadow: var(--shadow); }
+  .welcome-logo { height: 120px; width: auto; display: block; margin: 0 auto 1.25rem; }
+
+  /* كبسولة ثلاثية الأبعاد للدخول إلى الموقع */
+  .capsule-stage {
+    --cw: clamp(48px, 14vw, 62px);
+    position: relative; display: grid; place-items: center;
+    height: calc(var(--cw) * 2.7); margin: .25rem auto .25rem;
+  }
+  .capsule-stage::after {
+    content: ""; position: absolute; bottom: 2px; left: 50%; width: calc(var(--cw) * 1.9); height: 12px;
+    transform: translateX(-50%); border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--primary) 45%, transparent), transparent);
+    animation: capsule-shadow 3.2s ease-in-out infinite; pointer-events: none;
+  }
+  .capsule-btn {
+    position: relative; width: var(--cw); height: calc(var(--cw) * 2.4); padding: 0; border: 0; background: none;
+    cursor: pointer; -webkit-tap-highlight-color: transparent; border-radius: 999px;
+    transform: rotate(45deg);
+    animation: capsule-float 3.2s ease-in-out infinite;
+    filter: drop-shadow(0 0 14px rgba(59, 130, 222, .55)) drop-shadow(0 8px 10px rgba(16, 36, 59, .25));
+    transition: filter .2s;
+  }
+  .capsule-btn:hover { filter: drop-shadow(0 0 20px rgba(91, 156, 240, .8)) drop-shadow(0 8px 10px rgba(16, 36, 59, .25)); }
+  .capsule-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 10px; border-radius: 999px; }
+  .cap-half {
+    position: absolute; left: 0; width: 100%; height: 50%;
+    transition: transform .5s cubic-bezier(.3, 1.5, .5, 1), opacity .4s ease .35s;
+  }
+  .cap-half::after {
+    content: ""; position: absolute; top: 10%; bottom: 10%; left: 17%; width: 12%; border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,.08));
+  }
+  .cap-top {
+    top: 0; border-radius: 999px 999px 0 0; border-bottom: 2px solid #07224f;
+    background: linear-gradient(90deg, #0a3fb8 0%, #2f86f5 30%, #8ccaff 48%, #2a79e8 68%, #0a3fb8 100%);
+    box-shadow: inset 0 6px 10px rgba(255,255,255,.35), inset 0 -8px 12px rgba(5,25,80,.45);
+  }
+  .cap-bottom {
+    bottom: 0; border-radius: 0 0 999px 999px;
+    background: linear-gradient(90deg, #8e9bb0 0%, #e4ebf4 28%, #ffffff 47%, #cfd8e5 70%, #8795ab 100%);
+    box-shadow: inset 0 -8px 12px rgba(70,85,110,.4), inset 0 8px 10px rgba(255,255,255,.5);
+  }
+  .capsule-btn.burst { animation: none; pointer-events: none; }
+  .capsule-btn.burst .cap-top { transform: translateY(-85%) rotate(-14deg); opacity: 0; }
+  .capsule-btn.burst .cap-bottom { transform: translateY(85%) rotate(14deg); opacity: 0; }
+  .welcome-modal .capsule-hint {
+    margin: .75rem 0 0; font-weight: 500; color: var(--primary); font-size: var(--fs-sm);
+    animation: hint-pulse 2s ease-in-out infinite; transition: opacity .3s;
+  }
+  .capsule-stage.done + .capsule-hint { opacity: 0; animation: none; }
+  .drop {
+    position: absolute; top: 50%; left: 50%; border-radius: 50%; pointer-events: none; z-index: 5;
+    background: radial-gradient(circle at 30% 28%, #d6ecff 0%, #4f9cf5 45%, #0a3fb8 100%);
+    box-shadow: 0 0 10px rgba(79, 156, 245, .7);
+  }
+  .splash {
+    position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%;
+    border: 4px solid #4f9cf5; pointer-events: none; z-index: 4; animation: splash-ring .7s ease-out forwards;
+  }
+  @keyframes splash-ring { from { transform: scale(.3); opacity: .9; } to { transform: scale(7); opacity: 0; } }
+  @keyframes capsule-float {
+    0%, 100% { transform: translateY(0) rotate(40deg); }
+    50% { transform: translateY(-10px) rotate(50deg); }
+  }
+  @keyframes capsule-shadow { 0%, 100% { opacity: .9; transform: translateX(-50%) scale(1); } 50% { opacity: .5; transform: translateX(-50%) scale(.8); } }
+  @keyframes hint-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+  @media (max-height: 720px) {
+    .welcome-modal { padding: 1.25rem; }
+    .welcome-logo { height: 64px; margin-bottom: .75rem; }
+    .capsule-stage { --cw: 44px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .capsule-btn, .capsule-stage::after, .welcome-modal .capsule-hint { animation: none; }
+  }
 
   /* الأزرار */
   .btn {
@@ -162,7 +235,7 @@
     display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 68px;
   }
   .brand { display: inline-flex; align-items: center; gap: .65rem; color: var(--text); }
-  .brand-logo { width: 46px; height: 46px; border-radius: 12px; object-fit: cover; flex: none; display: block; }
+  .brand-logo { height: 46px; width: auto; flex: none; display: block; }
   .brand b { font-weight: 600; font-size: var(--fs-lg); }
   .nav { display: flex; align-items: center; gap: .6rem; }
 
@@ -441,7 +514,7 @@
 
   .site-footer { margin-top: 4rem; background: var(--surface); border-top: 1px solid var(--border); padding: 2.5rem 0 1.5rem; }
   .footer-content { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; text-align: center; }
-  .footer-content .brand-logo { width: 56px; height: 56px; border-radius: 14px; }
+  .footer-content .brand-logo { height: 56px; width: auto; }
   .social-icons { display: flex; gap: 1rem; }
   .social-icon-btn {
     width: 40px; height: 40px; border-radius: 50%; display: inline-grid; place-items: center;
@@ -468,7 +541,7 @@
     }
     .nav .icon-btn { width: 36px; height: 36px; }
     .nav .icon-btn svg { width: 18px; height: 18px; }
-    .brand-logo { width: 38px; height: 38px; border-radius: 10px; }
+    .brand-logo { height: 38px; width: auto; }
     .brand b { font-size: var(--fs-md); }
   }
   </style>
@@ -478,17 +551,23 @@
   <!-- نافذة ترحيبية تظهر عند فتح الموقع (مرة واحدة في كل جلسة) -->
   <div class="welcome-modal-overlay" id="welcome-modal">
     <div class="welcome-modal">
-      <img class="welcome-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="DrugWise">
+      <img class="welcome-logo" src="{{ url_for('static', filename='logo.png') }}" alt="DrugWise">
       <h2><i class="fa-solid fa-pills"></i> أهلاً بك في نظام تداخل الأدوية</h2>
       <p>منصة ذكية متكاملة تم تصميمه خصيصاً لدعم الصيادلة والمرضى في الكشف اللحظي عن التداخلات الدوائية الخطيرة، لضمان أعلى معايير الأمان والسلامة الدوائية.</p>
-      <button type="button" class="btn btn-primary" id="close-modal-btn">ابدأ الآن</button>
+      <div class="capsule-stage" id="capsule-stage">
+        <button type="button" class="capsule-btn" id="capsule-btn" aria-label="اضغط على الكبسولة للمتابعة والدخول إلى الموقع">
+          <span class="cap-half cap-top"></span>
+          <span class="cap-half cap-bottom"></span>
+        </button>
+      </div>
+      <p class="capsule-hint">اضغط على الكبسولة للمتابعة والدخول إلى الموقع</p>
     </div>
   </div>
 
   <header class="site-header">
     <div class="container">
       <a class="brand" href="{{ url_for('index') }}">
-        <img class="brand-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="DrugWise">
+        <img class="brand-logo" src="{{ url_for('static', filename='logo.png') }}" alt="DrugWise">
         <b>تداخل الأدوية</b>
       </a>
 
@@ -770,7 +849,7 @@
   <footer class="site-footer">
     <div class="container footer-content">
       <div class="brand">
-        <img class="brand-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="DrugWise">
+        <img class="brand-logo" src="{{ url_for('static', filename='logo.png') }}" alt="DrugWise">
         <b>تداخل الأدوية</b>
       </div>
       <div class="social-icons">
@@ -788,7 +867,8 @@
        ولا تظهر عند التنقل بين الصفحات أو بعد إرسال نموذج الفحص */
     (function() {
       var modal = document.getElementById('welcome-modal');
-      var closeBtn = document.getElementById('close-modal-btn');
+      var capsule = document.getElementById('capsule-btn');
+      var stage = document.getElementById('capsule-stage');
       var afterSubmit = {{ 'true' if request.method == 'POST' else 'false' }};
       var seen = false;
       try { seen = sessionStorage.getItem('welcomeShown') === '1'; } catch (e) {}
@@ -796,8 +876,46 @@
         modal.classList.add('active');
         try { sessionStorage.setItem('welcomeShown', '1'); } catch (e) {}
       }
-      closeBtn.addEventListener('click', function() {
-        modal.classList.remove('active');
+      var busy = false;
+      var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      function closeModal() { modal.classList.remove('active'); }
+
+      /* انفجار المحلول من داخل الكبسولة */
+      function spawn() {
+        var ring = document.createElement('span');
+        ring.className = 'splash';
+        stage.appendChild(ring);
+        setTimeout(function() { ring.remove(); }, 800);
+
+        var reach = Math.min(window.innerWidth, 560) * 0.34;
+        for (var i = 0; i < 36; i++) {
+          var size = 7 + Math.random() * 15;
+          var el = document.createElement('span');
+          el.className = 'drop';
+          el.style.width = el.style.height = size + 'px';
+          el.style.margin = (-size / 2) + 'px 0 0 ' + (-size / 2) + 'px';
+          stage.appendChild(el);
+          var ang = Math.random() * Math.PI * 2;
+          var dist = reach * (0.35 + Math.random() * 0.75);
+          var dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist;
+          var fall = 25 + Math.random() * 45;
+          var a = el.animate([
+            { transform: 'translate(0,0) scale(.2)', opacity: 1 },
+            { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1)', opacity: 1, offset: 0.6 },
+            { transform: 'translate(' + (dx * 1.08) + 'px,' + (dy + fall) + 'px) scale(.5)', opacity: 0 }
+          ], { duration: 750 + Math.random() * 450, easing: 'cubic-bezier(.15,.7,.3,1)', fill: 'forwards' });
+          a.onfinish = (function(node) { return function() { node.remove(); }; })(el);
+        }
+      }
+
+      capsule.addEventListener('click', function() {
+        if (busy) return;
+        busy = true;
+        capsule.classList.add('burst');
+        stage.classList.add('done');
+        if (reduce || !stage.animate) { setTimeout(closeModal, 300); return; }
+        setTimeout(spawn, 120);
+        setTimeout(closeModal, 1150);
       });
     })();
 
