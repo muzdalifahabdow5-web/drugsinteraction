@@ -73,6 +73,7 @@
     .brand { display: inline-flex; align-items: center; gap: .65rem; font-weight: 700; font-size: 1.125rem; color: var(--text); }
     .brand:hover { color: var(--text); }
     .brand svg { width: 38px; height: 38px; flex: none; }
+    .brand-logo { width: 46px; height: 46px; border-radius: 12px; object-fit: cover; flex: none; display: block; }
 
     .icon-btn { cursor: pointer; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); display: grid; place-items: center; transition: all .15s var(--ease); padding: 0; }
     .icon-btn:hover { border-color: var(--primary); background: var(--primary-soft); }
@@ -159,6 +160,7 @@
     @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
     @media (max-width: 600px) { .topbar { padding: .75rem 1rem; } }
+    @media (max-width: 768px) { .brand-logo { width: 38px; height: 38px; border-radius: 10px; } }
     
     .info-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .75rem; }
     .info-list li { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: .75rem 1rem; font-size: .9rem; color: var(--text-soft); }
@@ -188,18 +190,7 @@
 <body>
   <header class="topbar">
     <a class="brand" href="{{ url_for('index') }}">
-      <svg viewBox="0 0 64 64" aria-hidden="true">
-        <g transform="translate(32 32)">
-          <g transform="rotate(45)">
-            <path d="M0 -11H-19A11 11 0 0 0 -19 11H0Z" fill="#fff" stroke="#9DB6D4" stroke-width="1.5"/>
-            <path d="M0 -11H19A11 11 0 0 1 19 11H0Z" fill="#4A8FE0"/>
-          </g>
-          <g transform="rotate(-45)">
-            <path d="M0 -11H-19A11 11 0 0 0 -19 11H0Z" fill="#4A8FE0"/>
-            <path d="M0 -11H19A11 11 0 0 1 19 11H0Z" fill="#fff" stroke="#9DB6D4" stroke-width="1.5"/>
-          </g>
-        </g>
-      </svg>
+      <img class="brand-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="DrugWise">
       تداخل الأدوية
     </a>
     <button class="icon-btn" id="theme-toggle" type="button" aria-label="تبديل الوضع الليلي" aria-pressed="false">
