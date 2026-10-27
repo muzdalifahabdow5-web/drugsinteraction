@@ -640,6 +640,7 @@
       {% if result %}
         <section class="result" id="result-section" aria-live="polite">
 
+          {% if not result.drug_info %}
           <div class="verdict-box {{ result.level }}">
             <span class="verdict-icon"></span>
             <div>
@@ -659,10 +660,13 @@
             {% endif %}
           </div>
 
+          {% endif %}
+
           {% if result.not_found %}
             <p class="alert-warn" role="status">غير متوفر حاليًا في بيانات الأدوية لدينا: {{ result.not_found|join('، ') }}</p>
           {% endif %}
 
+          {% if not result.drug_info %}
           {% for f in result.findings %}
             <article class="finding {{ f.severity }}">
               <h3 style="display:flex; align-items:center; gap:.7rem; font-size:var(--fs-lg);">
@@ -672,6 +676,8 @@
               <p style="margin-top:.5rem; color:var(--text-soft);">{{ f.text }}</p>
             </article>
           {% endfor %}
+
+          {% endif %}
 
           {% if result.drug_info %}
             {% set di = result.drug_info %}
