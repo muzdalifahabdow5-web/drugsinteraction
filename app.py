@@ -227,7 +227,8 @@ AGE_LIMITS = {'day': 36500, 'month': 1440, 'year': 120}
 
 def age_to_days(value, unit):
     factor = {'day': 1, 'month': 30.4375, 'year': 365.25}[unit]
-    return math.ceil(value * factor)
+    # تقريب نصف لأعلى: يطابق ROUND في قاعدة البيانات (triggers)
+    return math.floor(value * factor + 0.5)
 
 
 def parse_age(raw, unit):
@@ -502,6 +503,94 @@ def safe_log(title):
         pass
 
 
+# ---------- بطاقة بيانات الدواء الواحد ----------
+
+def assemble_drug_info(med, form_name, class_name, inter_rows, partners,
+                       contra_rows, cond_names, group_names):
+    """
+    يجمّع بيانات بطاقة الدواء الواحد. لا يتصل بقاعدة البيانات، فيسهل اختباره.
+    med: كائن الدواء | inter_rows: التداخلات التي يدخل فيها الدواء
+    partners: {id: كائن الدواء الآخر} | contra_rows: موانع استعمال هذا الدواء
+    """
+    interactions = []
+    for r in inter_rows:
+        other_id = r.drug_2_id if r.drug_1_id == med.id else r.drug_1_id
+        other = partners.get(other_id)
+        if not other:
+            continue
+        interactions.append({
+            'name': f'{other.scientific_name} ({other.trade_name})',
+            'severity': r.severity,
+            'severity_ar': SEVERITY_AR.get(r.severity, r.severity),
+            'text': r.description,
+        })
+    interactions.sort(key=lambda x: SEVERITY_RANK.get(x['severity'], 0), reverse=True)
+
+    contras = []
+    for c in contra_rows:
+        reasons = []
+        if c.condition_id is not None and c.condition_id in cond_names:
+            reasons.append(cond_names[c.condition_id])
+        if c.pregnancy_risk:
+            reasons.append('الحمل')
+        lo, hi = c.min_age_days, c.max_age_days
+        if lo is not None and hi is not None:
+            reasons.append(f'العمر بين {days_text(lo)} و{days_text(hi)}')
+        elif lo is not None:
+            reasons.append(f'العمر {days_text(lo)} فأكثر')
+        elif hi is not None:
+            reasons.append(f'العمر {days_text(hi)} فأقل')
+        elif c.age_group_id is not None and group_names.get(c.age_group_id):
+            reasons.append(f'الفئة العمرية: {group_names[c.age_group_id]}')
+        if not reasons:
+            continue
+        contras.append({
+            'reason': ' و'.join(reasons),
+            'severity': c.severity,
+            'severity_ar': SEVERITY_AR.get(c.severity, c.severity),
+            'text': c.description,
+        })
+    contras.sort(key=lambda x: SEVERITY_RANK.get(x['severity'], 0), reverse=True)
+
+    return {
+        'scientific_name': med.scientific_name,
+        'trade_name': med.trade_name,
+        'classification': class_name,
+        'form': form_name,
+        'concentration': med.concentration,
+        'dosage': med.dosage,
+        'warning': med.warning,
+        'interactions': interactions,
+        'contras': contras,
+    }
+
+
+def build_drug_info(med_id):
+    """يقرأ من القاعدة ما تحتاجه بطاقة الدواء الواحد. يعيد None إن لم يوجد الدواء."""
+    med = Medication.query.get(med_id)
+    if med is None:
+        return None
+    form = DosageForm.query.get(med.dosage_form_id) if med.dosage_form_id else None
+    cls = DrugClassification.query.get(med.classification_id) if med.classification_id else None
+
+    inter_rows = DrugInteraction.query.filter(
+        (DrugInteraction.drug_1_id == med_id) | (DrugInteraction.drug_2_id == med_id)).all()
+    partner_ids = {r.drug_2_id if r.drug_1_id == med_id else r.drug_1_id for r in inter_rows}
+    partners = ({m.id: m for m in Medication.query.filter(Medication.id.in_(partner_ids)).all()}
+                if partner_ids else {})
+
+    contra_rows = DrugContraindication.query.filter_by(medication_id=med_id).all()
+    cond_ids = {c.condition_id for c in contra_rows if c.condition_id is not None}
+    cond_names = ({c.id: c.condition_name for c in
+                   HealthCondition.query.filter(HealthCondition.id.in_(cond_ids)).all()}
+                  if cond_ids else {})
+    group_names = {g.id: g.name_arabic for g in AgeGroup.query.all()}
+
+    return assemble_drug_info(med, form.name_arabic if form else None,
+                              cls.name_arabic if cls else None,
+                              inter_rows, partners, contra_rows, cond_names, group_names)
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     """صفحة فحص التداخل: مفتوحة للجميع."""
@@ -555,6 +644,13 @@ def index():
                 db.session.rollback()
                 safe_log('[خطأ في تحليل الفحص]')
                 result, error = None, 'تعذّر تحليل الفحص الآن، حاول مرة أخرى.'
+            # دواء واحد فقط: نعرض بطاقة بياناته وتداخلاته (فشلها لا يمنع النتيجة)
+            if result is not None and len(result['med_ids']) == 1:
+                try:
+                    result['drug_info'] = build_drug_info(result['med_ids'][0])
+                except Exception:
+                    db.session.rollback()
+                    safe_log('[خطأ في بيانات الدواء]')
             if result is not None and not result['med_ids']:
                 error = 'لم نجد أيًّا من الأدوية المدخلة في قاعدة المعرفة.'
                 result = None
