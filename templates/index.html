@@ -490,7 +490,7 @@
   <div class="welcome-modal-overlay" id="welcome-modal">
     <div class="welcome-modal">
       <img class="welcome-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="DrugWise">
-      <h2><i class="fa-solid fa-pills"></i> أهلاً بك في نظام تداخل الأدوية</h2>
+      <h2><i class="fa-solid fa-pills"></i> أهلاً بك في نظام Drug Wise </h2>
       <p>منصة ذكية متكاملة تم تصميمه خصيصاً لدعم الصيادلة والمرضى في الكشف اللحظي عن التداخلات الدوائية الخطيرة، لضمان أعلى معايير الأمان والسلامة الدوائية.</p>
       <button type="button" class="btn btn-primary" id="close-modal-btn">ابدأ الآن</button>
     </div>
@@ -544,7 +544,7 @@
             {% for n in known %}<option value="{{ n }}">{% endfor %}
           </datalist>
           <input type="hidden" name="drugs" id="drugs-hidden">
-          <p class="hint">أضف دواءً واحداً لمعرفة بياناته، أو دواءين أو أكثر لفحص التداخل بينها. اضغط Enter أو الفاصلة بعد كل دواء.</p>
+          <p class="hint">أضف دواءً واحداً لمعرفة بياناته، أو دوائين أو أكثر لفحص التداخل بينها. اضغط Enter أو الفاصلة بعد كل دواء.</p>
         </div>
 
         {% if session.get('role') == 'pharmacist' %}
@@ -753,7 +753,7 @@
             </summary>
             <div class="acc-body">
               <p style="font-weight:600; color:var(--text); margin-bottom:.5rem;">نظام يجعل السلامة الدوائية أوضح وأسهل</p>
-              <p>«تداخل الأدوية» مشروع تقني من كلية الجزيرة التقنية، يساعد المرضى والصيادلة على التعرّف بسرعة على التداخلات المحتملة بين الأدوية، مع مراعاة العمر والأمراض المصاحبة وحالة الحمل، وعرض النتيجة بلغة عربية واضحة ودرجات خطورة مفهومة.</p>
+              <p> Drug Wise» نظام تقني يساعد المرضى والصيادلة على التعرّف بسرعة على التداخلات المحتملة بين الأدوية، مع مراعاة العمر والأمراض المصاحبة وحالة الحمل، وعرض النتيجة بلغة عربية واضحة ودرجات خطورة مفهومة.</p>
             </div>
           </details>
 
@@ -831,7 +831,7 @@
     <div class="container footer-content">
       <div class="brand">
         <img class="brand-logo" src="{{ url_for('static', filename='logo.jpg') }}" alt="DrugWise">
-        <b>تداخل الأدوية</b>
+        <b>Drug Wise </b>
       </div>
       <div class="social-icons">
         <a href="#" class="social-icon-btn" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in" aria-hidden="true"></i></a>
@@ -839,7 +839,7 @@
         <a href="#" class="social-icon-btn" aria-label="Telegram"><i class="fa-brands fa-telegram" aria-hidden="true"></i></a>
         <a href="#" class="social-icon-btn" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i></a>
       </div>
-      <div class="footer-copy">جميع الحقوق محفوظة © 2026 - مشروع نظام الأدوية الخبير | كلية الجزيرة التقنية</div>
+      <div class="footer-copy">جميع الحقوق محفوظة © 2026 - نظام Drug Wise </div>
     </div>
   </footer>
 
