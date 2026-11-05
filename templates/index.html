@@ -483,41 +483,6 @@
     .brand-logo { width: 38px; height: 38px; border-radius: 10px; }
     .brand b { font-size: var(--fs-md); }
   }
-
-  /* ===== البانر الرئيسي ===== */
-  .hero-banner {
-    display: block; width: 100%; max-width: 460px; height: auto; aspect-ratio: 1 / 1;
-    margin-inline: auto; border-radius: var(--r-lg); box-shadow: var(--shadow-lg); object-fit: cover;
-  }
-
-  /* ===== التجاوب مع جميع الشاشات ===== */
-  img, svg, video { max-width: 100%; }
-  body { overflow-x: hidden; }
-  .card, .acc, .disclaimer, .alert-error { max-width: 100%; }
-  .card *, .acc * { overflow-wrap: anywhere; }
-  .card select, .card .input, .chipbox { max-width: 100%; }
-
-  @media (max-width: 768px) {
-    .grid-2 { grid-template-columns: 1fr !important; }
-    .hero-banner { max-width: 340px; }
-  }
-  @media (max-width: 480px) {
-    .container { width: min(100% - 1.25rem, var(--maxw)); }
-    main { padding-block: 1.5rem 2rem; }
-    .welcome-modal { padding: 1.25rem; }
-    .welcome-logo { width: 100px; height: 100px; }
-    .brand b { font-size: .95rem; }
-    .age-row select { min-width: 84px; }
-    .hero-banner { max-width: 280px; }
-  }
-  @media (max-width: 360px) {
-    .site-header .container { flex-wrap: wrap; padding-block: .4rem; }
-    .brand b { display: none; }
-    .steps-grid, .content-grid-2, .goals-list { grid-template-columns: 1fr !important; }
-  }
-  @media (min-width: 1200px) {
-    .hero-banner { max-width: 520px; }
-  }
   </style>
 </head>
 <body>
@@ -560,7 +525,8 @@
     <div class="container">
 
       <section class="hero">
-        <img class="hero-banner" src="{{ url_for('static', filename='hero.jpg') }}" alt="DrugWise — اعرف أدويتك، واتخذ قرارات أكثر أماناً">
+        <h1>DrugWise</h1>
+        <p>أضف الأدوية التي تتناولها، وسنفحص التداخلات المحتملة بينها    .</p>
       </section>
 
       <form method="POST" id="check-form" action="{{ url_for('index') }}" class="card">
