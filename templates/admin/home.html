@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <title>لوحة تحكم الأدمن | Drug Wise </title>
+  <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='logo.jpg') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='logo.jpg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap">
@@ -37,6 +39,7 @@
       --moderate-bg: #FFF3DD; --moderate-fg: #8A4A00; --moderate-bd: #F2CD8C; --moderate-solid: #E08A00;
       --minor-bg: #E6F0FD;    --minor-fg: #1D56AD;    --minor-bd: #B5D0F4;    --minor-solid: #3B82DE;
       --safe-bg: #E4F6EC;     --safe-fg: #126A38;     --safe-bd: #A8DDBF;     --safe-solid: #1E9A55;
+      --stat-bg: #D6E6F9; --stat-bd: #A9C6E8;
     }
     [data-theme="dark"] {
       --bg: #09131F; --bg-tint: #0E1D30; --surface: #101F33; --surface-2: #14263D;
@@ -51,6 +54,7 @@
       --moderate-bg: #392909; --moderate-fg: #FFD28A; --moderate-bd: #7A5718; --moderate-solid: #FFB020;
       --minor-bg: #11284A;    --minor-fg: #AACCFF;    --minor-bd: #2A4F86;    --minor-solid: #6AA8F5;
       --safe-bg: #0E3222;     --safe-fg: #92E3B3;     --safe-bd: #1E6847;     --safe-solid: #4CD08A;
+      --stat-bg: #17314F; --stat-bd: #2F5A8C;
     }
 
     *, *::before, *::after { box-sizing: border-box; }
@@ -192,8 +196,11 @@
     .pill.sev-safe, .pill.sev-none { background: var(--safe-bg); color: var(--safe-fg); border-color: var(--safe-bd); }
 
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat { display: flex; align-items: center; gap: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 1.1rem 1.25rem; }
-    .stat .ico { flex: none; width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); font-size: 1.2rem; }
+    .stats li { display: flex; }
+    .stats li > .stat { flex: 1; }
+    a.stat, a.stat:hover { color: var(--text); cursor: default; text-decoration: none; }
+    .stat { display: flex; align-items: center; gap: 1rem; background: var(--stat-bg); border: 1px solid var(--stat-bd); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 1.1rem 1.25rem; }
+    .stat .ico { flex: none; width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--surface); color: var(--primary); font-size: 1.2rem; }
     .stat .val { font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
     .stat .lbl { font-size: .85rem; color: var(--text-soft); }
     .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
@@ -226,9 +233,9 @@
       {% endwith %}
 
       <ul class="stats">
-        <li class="stat"><span class="ico" aria-hidden="true"><i class="fa-solid fa-pills"></i></span><div><div class="val">{{ counts.medications }}</div><div class="lbl">عدد الأدوية</div></div></li>
-        <li class="stat"><span class="ico" aria-hidden="true"><i class="fa-solid fa-users"></i></span><div><div class="val">{{ counts.users }}</div><div class="lbl">عدد المستخدمين</div></div></li>
-        <li class="stat"><span class="ico" aria-hidden="true"><i class="fa-solid fa-arrows-left-right-to-line"></i></span><div><div class="val">{{ counts.interactions }}</div><div class="lbl">عدد التداخلات</div></div></li>
+        <li><a class="stat" href="{{ url_for('admin_medications') }}"><span class="ico" aria-hidden="true"><i class="fa-solid fa-pills"></i></span><div><div class="val">{{ counts.medications }}</div><div class="lbl">عدد الأدوية</div></div></a></li>
+        <li><a class="stat" href="{{ url_for('admin_users') }}"><span class="ico" aria-hidden="true"><i class="fa-solid fa-users"></i></span><div><div class="val">{{ counts.users }}</div><div class="lbl">عدد المستخدمين</div></div></a></li>
+        <li><a class="stat" href="{{ url_for('admin_interactions') }}"><span class="ico" aria-hidden="true"><i class="fa-solid fa-arrows-left-right-to-line"></i></span><div><div class="val">{{ counts.interactions }}</div><div class="lbl">عدد التداخلات</div></div></a></li>
       </ul>
 
       <ul class="tiles">
